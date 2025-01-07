@@ -16,10 +16,26 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Pacienty Management PC',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primaryColor: const Color(0xFF45AC8B), // Set custom primary color
+        primarySwatch: createMaterialColor(const Color(0xFF45AC8B)), // Add a primary swatch
       ),
       home: const PacientManagementPC(),
     );
+  }
+  
+  MaterialColor createMaterialColor(Color color) {
+    List<int> strengths = <int>[50, 100, 200, 300, 400, 500, 600, 700, 800, 900];
+    Map<int, Color> swatch = {};
+    for (int i = 0; i < strengths.length; i++) {
+      final strength = strengths[i];
+      swatch[strength] = Color.fromRGBO(
+        color.red,
+        color.green,
+        color.blue,
+        (strength + 1) / 1000,
+      );
+    }
+    return MaterialColor(color.value, swatch);
   }
 }
 
@@ -35,18 +51,26 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
   final List<Map<String, String>> _submittedData = [];
   final List<Map<String, dynamic>> _inventoryItems = [];
 
+  // Method to determine whether the primaryColor is light or dark
+  Color getTextColor(BuildContext context) {
+    final primaryColor = Theme.of(context).primaryColor;
+    // Compute brightness based on the color's luminance
+    return primaryColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Container(
-            color: ThemeData().primaryColor,
-            child: Center(
-                child: Text('Pacienti Management PC',
-                    style: TextStyle(
-                        color: Theme.of(context).primaryColor == Colors.white
-                            ? Colors.black
-                            : Colors.white)))),
+        title: Text(
+          'Pacient Manager PC',
+          style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: getTextColor(context)), // Title text styling
+        ),
+        backgroundColor:
+            Theme.of(context).primaryColor, // Background color of the header
+        centerTitle: true, // Center the title
       ),
       body: Row(
         children: [
@@ -182,7 +206,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                                   IconButton(
                                     icon: const Icon(Icons.delete),
                                     onPressed: () {
-                                      _showDeleteConfirmationItemDialog(
+                                      _showDeleteConfirmationPacientDialog(
                                           context, index);
                                     },
                                   ),
@@ -197,7 +221,6 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
           ),
         ),
 
-        // Add Button styled and positioned like Inventář page
         Positioned(
           bottom: 16,
           right: 16,
@@ -486,7 +509,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                                               null
                                           ? FileImage(_inventoryItems[index]
                                               ['image']) as ImageProvider
-                                          : AssetImage(
+                                          : const AssetImage(
                                               'assets/images/placeholder.png'),
                                       fit: BoxFit.cover,
                                     ),
