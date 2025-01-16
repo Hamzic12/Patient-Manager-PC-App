@@ -145,6 +145,172 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
   }
 
   Widget _buildPacientiPage() {
+    
+    void _showFormDialog(BuildContext context, int index) {
+    final nameController = TextEditingController();
+    final emailController = TextEditingController();
+    final phoneController = TextEditingController();
+
+    DateTime? selectedDate;
+    TimeOfDay? selectedTime;
+
+    if (index != -1) {
+      // Pre-fill the form with the person's data
+      nameController.text = _submittedData[index]['name'] ?? '';
+      emailController.text = _submittedData[index]['email'] ?? '';
+      phoneController.text = _submittedData[index]['phone'] ?? '';
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(index == -1 ? 'Přidat pacienta' : 'Upravit pacienta'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Jméno'),
+                ),
+                TextField(
+                  controller: emailController,
+                  decoration: const InputDecoration(labelText: 'E-mail'),
+                ),
+                TextField(
+                  controller: phoneController,
+                  decoration:
+                      const InputDecoration(labelText: 'Telefonní číslo'),
+                ),
+                const SizedBox(height: 10),
+                // Date picker button
+                Text(selectedDate == null
+                    ? 'Select Date'
+                    : 'Selected Date: ${DateFormat('yyyy-MM-dd').format(selectedDate!)}'),
+                ElevatedButton(
+                  onPressed: () async {
+                    DateTime? pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2101),
+                    );
+                    if (pickedDate != null && pickedDate != selectedDate) {
+                      setState(() {
+                        selectedDate = pickedDate;
+                      });
+                    }
+                  },
+                  child: const Text('Vyber datum'),
+                ),
+                const SizedBox(height: 10),
+                // Time picker button
+                Text(selectedTime == null
+                    ? 'Vyberte čas'
+                    : 'Vybraný čas: ${selectedTime!.format(context)}'),
+                ElevatedButton(
+                  onPressed: () async {
+                    TimeOfDay? pickedTime = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.now(),
+                    );
+                    if (pickedTime != null && pickedTime != selectedTime) {
+                      setState(() {
+                        selectedTime = pickedTime;
+                      });
+                    }
+                  },
+                  child: const Text('Vyberte čas'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Zrušit'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final name = nameController.text;
+                final email = emailController.text;
+                final phone = phoneController.text;
+                final time =
+                    DateFormat('yyyy-MM-dd – HH:mm:ss').format(DateTime.now());
+
+                // If a date or time was selected, use them
+                String selectedDateTime = '';
+                if (selectedDate != null && selectedTime != null) {
+                  final dateTime = DateTime(
+                    selectedDate!.year,
+                    selectedDate!.month,
+                    selectedDate!.day,
+                    selectedTime!.hour,
+                    selectedTime!.minute,
+                  );
+                  selectedDateTime =
+                      DateFormat('yyyy-MM-dd HH:mm').format(dateTime);
+                }
+
+                setState(() {
+                  if (index == -1) {
+                    _submittedData.add({
+                      'name': name,
+                      'email': email,
+                      'phone': phone,
+                      'selectedDateTime': selectedDateTime,
+                    });
+                  } else {
+                    _submittedData[index] = {
+                      'name': name,
+                      'email': email,
+                      'phone': phone,
+                      'selectedDateTime': selectedDateTime,
+                    };
+                  }
+                });
+
+                Navigator.of(context).pop();
+              },
+              child: Text(index == -1 ? 'Přidat' : 'Upravit'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDeleteConfirmationPacientDialog(BuildContext context, int index) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Potvrďte vyřazení'),
+          content: const Text('Jste si jistý, že chcete pacienta vyřadit?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('Ne'),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _submittedData
+                      .removeAt(index); // Remove the person from the list
+                });
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('Ano'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+    
     return Stack(
       children: [
         Padding(
@@ -166,7 +332,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                 child: _submittedData.isEmpty
                     ? const Center(
                         child: Text(
-                          'Nemáme žádného pacienta.',
+                          'Nemáme žádného objednaného pacienta.',
                           style: TextStyle(fontSize: 18, color: Colors.grey),
                           textAlign: TextAlign.center,
                         ),
@@ -185,11 +351,9 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                                   Text(
                                       'Email: ${_submittedData[index]['email'] ?? 'Neuvedeno'}'),
                                   Text(
-                                      'Phone: ${_submittedData[index]['phone'] ?? 'Neuvedeno'}'),
+                                      'Telefon: ${_submittedData[index]['phone'] ?? 'Neuvedeno'}'),
                                   Text(
-                                      'Submission Time: ${_submittedData[index]['time'] ?? 'Neuvedeno'}'),
-                                  Text(
-                                      'Selected Date & Time: ${_submittedData[index]['selectedDateTime'] ?? 'Neuvedeno'}'),
+                                      'Objednaná schůzka: ${_submittedData[index]['selectedDateTime'] ?? 'Neuvedeno'}'),
                                 ],
                               ),
                               trailing: Row(
@@ -256,6 +420,95 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
       return timeA.compareTo(timeB);
     });
 
+Widget _buildAppointmentBox(Map<String, String> appointment) {
+    final startTime =
+        DateFormat('yyyy-MM-dd HH:mm').parse(appointment['selectedDateTime']!);
+    final endTime =
+        startTime.add(const Duration(minutes: 20)); // 20 minutes duration
+
+    final startMinute = startTime.minute;
+    final endMinute = endTime.minute;
+
+    // Calculate the position of the box based on the start minute
+    const boxHeight = 40.0; // Height of each appointment box
+    final boxOffset = (startMinute / 60) * boxHeight;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          vertical: 4.0), // Padding around the appointment box
+      child: Container(
+        margin: EdgeInsets.only(bottom: boxOffset),
+        width: 60, // Width of each appointment box
+        height: boxHeight, // Height of each appointment box
+        color: Colors.blueAccent, // Color of the box
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              appointment['name'] ?? '',
+              style: const TextStyle(color: Colors.white, fontSize: 10),
+              textAlign: TextAlign.center,
+            ),
+            Text(
+              '${DateFormat('HH:mm').format(startTime)} - ${DateFormat('HH:mm').format(endTime)}',
+              style: const TextStyle(color: Colors.white, fontSize: 8),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+Widget _buildTimeSlotColumn(
+      DateTime hour, List<Map<String, String>> appointments) {
+    final hourStart = DateFormat('yyyy-MM-dd HH:mm').format(hour);
+
+    // Find all appointments for this specific hour
+    final currentHourAppointments = appointments.where((person) {
+      final startTime =
+          DateFormat('yyyy-MM-dd HH:mm').parse(person['selectedDateTime']!);
+      return startTime.hour == hour.hour;
+    }).toList();
+
+    // Return the column for this specific time slot (hour)
+    return Column(
+      children: [
+        // Display the time at the top of each column with padding
+        Padding(
+          padding: const EdgeInsets.symmetric(
+              vertical: 8.0), // Adjust the padding as needed
+          child: Text(
+            DateFormat('HH:mm').format(hour),
+            style: const TextStyle(
+                fontWeight: FontWeight.bold), // Optionally, make the time bold
+          ),
+        ),
+        const SizedBox(
+            height: 8), // Space between time label and the appointments
+        // Display the appointments in this time slot
+        for (var appointment in currentHourAppointments)
+          _buildAppointmentBox(appointment),
+      ],
+    );
+  }
+
+Widget _buildTimetable(List<Map<String, String>> appointments) {
+    // Generate time slots from 7:00 AM to 6:00 PM (11 hours in total)
+    final hoursInDay = List.generate(11, (index) {
+      final startHour = 7 + index;
+      return DateTime(
+          2024, 1, 1, startHour); // Start from 7:00 AM and increment each hour
+    });
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var hour in hoursInDay) _buildTimeSlotColumn(hour, appointments),
+      ],
+    );
+  }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Schůzky'),
@@ -282,6 +535,142 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
 
   Widget _buildInventarPage() {
     final ImagePicker picker = ImagePicker();
+
+// Method to show the Add Item dialog
+  void _showAddItemDialog(BuildContext context) {
+    final nameController = TextEditingController();
+    final capacityController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Přidej vybavení'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Název'),
+                ),
+                TextField(
+                  controller: capacityController,
+                  decoration: const InputDecoration(labelText: 'Počet'),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Zrušit'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final name = nameController.text;
+                final capacity = capacityController.text;
+
+                if (name.isNotEmpty && capacity.isNotEmpty) {
+                  setState(() {
+                    _inventoryItems.add({
+                      'name': name,
+                      'capacity': capacity,
+                      'image': null, // Placeholder image for now
+                    });
+                  });
+                }
+
+                Navigator.of(context).pop();
+              },
+              child: const Text('Přidat'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+// Method to show the Edit Item dialog
+  void _showEditItemDialog(BuildContext context, int index) {
+    final nameController =
+        TextEditingController(text: _inventoryItems[index]['name']);
+    final capacityController = TextEditingController(
+        text: _inventoryItems[index]['capacity'].toString());
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Upravit vybavení'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Název'),
+                ),
+                TextField(
+                  controller: capacityController,
+                  decoration: const InputDecoration(labelText: 'Počet'),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Zrušit'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _inventoryItems[index]['name'] = nameController.text;
+                  _inventoryItems[index]['capacity'] =
+                      int.tryParse(capacityController.text) ?? 0;
+                });
+                Navigator.of(context).pop();
+              },
+              child: const Text('Upravit'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+void _showDeleteConfirmationItemDialog(BuildContext context, int index) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Potvrďte odstranění'),
+          content:
+              const Text('Jste si jistý, že chcete odstranit toto vybavení?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('Ne'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _inventoryItems.removeAt(index); // Remove the item
+                });
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('Ano'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
     void showAddItemDialog(BuildContext context) async {
       final nameController = TextEditingController();
@@ -482,7 +871,13 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
               const SizedBox(height: 16),
               Expanded(
                 child: _inventoryItems.isEmpty
-                    ? const Center(child: Text('Inventář je prázdný'))
+                    ? const Center(
+                        child: Text(
+                          'Inventář je prázdný.',
+                          style: TextStyle(fontSize: 18, color: Colors.grey),
+                          textAlign: TextAlign.center,
+                        ),
+                      )
                     : GridView.builder(
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
@@ -581,399 +976,6 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-// Method to show the Add Item dialog
-  void _showAddItemDialog(BuildContext context) {
-    final nameController = TextEditingController();
-    final capacityController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Přidej vybavení'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Název'),
-                ),
-                TextField(
-                  controller: capacityController,
-                  decoration: const InputDecoration(labelText: 'Počet'),
-                  keyboardType: TextInputType.number,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Zrušit'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final name = nameController.text;
-                final capacity = capacityController.text;
-
-                if (name.isNotEmpty && capacity.isNotEmpty) {
-                  setState(() {
-                    _inventoryItems.add({
-                      'name': name,
-                      'capacity': capacity,
-                      'image': null, // Placeholder image for now
-                    });
-                  });
-                }
-
-                Navigator.of(context).pop();
-              },
-              child: const Text('Přidat'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-// Method to show the Edit Item dialog
-  void _showEditItemDialog(BuildContext context, int index) {
-    final nameController =
-        TextEditingController(text: _inventoryItems[index]['name']);
-    final capacityController = TextEditingController(
-        text: _inventoryItems[index]['capacity'].toString());
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Upravit vybavení'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Název'),
-                ),
-                TextField(
-                  controller: capacityController,
-                  decoration: const InputDecoration(labelText: 'Počet'),
-                  keyboardType: TextInputType.number,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Zrušit'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _inventoryItems[index]['name'] = nameController.text;
-                  _inventoryItems[index]['capacity'] =
-                      int.tryParse(capacityController.text) ?? 0;
-                });
-                Navigator.of(context).pop();
-              },
-              child: const Text('Upravit'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-// Method to show the Delete confirmation dialog
-  void _showDeleteConfirmationItemDialog(BuildContext context, int index) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Potvrďte odstranění'),
-          content:
-              const Text('Jste si jistý, že chcete odstranit toto vybavení?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: const Text('Ne'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _inventoryItems.removeAt(index); // Remove the item
-                });
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: const Text('Ano'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showFormDialog(BuildContext context, int index) {
-    final nameController = TextEditingController();
-    final emailController = TextEditingController();
-    final phoneController = TextEditingController();
-
-    DateTime? selectedDate;
-    TimeOfDay? selectedTime;
-
-    if (index != -1) {
-      // Pre-fill the form with the person's data
-      nameController.text = _submittedData[index]['name'] ?? '';
-      emailController.text = _submittedData[index]['email'] ?? '';
-      phoneController.text = _submittedData[index]['phone'] ?? '';
-    }
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(index == -1 ? 'Přidat pacienta' : 'Upravit pacienta'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Jméno'),
-                ),
-                TextField(
-                  controller: emailController,
-                  decoration: const InputDecoration(labelText: 'E-mail'),
-                ),
-                TextField(
-                  controller: phoneController,
-                  decoration:
-                      const InputDecoration(labelText: 'Telefonní číslo'),
-                ),
-                const SizedBox(height: 10),
-                // Date picker button
-                Text(selectedDate == null
-                    ? 'Select Date'
-                    : 'Selected Date: ${DateFormat('yyyy-MM-dd').format(selectedDate!)}'),
-                ElevatedButton(
-                  onPressed: () async {
-                    DateTime? pickedDate = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime.now(),
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2101),
-                    );
-                    if (pickedDate != null && pickedDate != selectedDate) {
-                      setState(() {
-                        selectedDate = pickedDate;
-                      });
-                    }
-                  },
-                  child: const Text('Vyber datum'),
-                ),
-                const SizedBox(height: 10),
-                // Time picker button
-                Text(selectedTime == null
-                    ? 'Vyberte čas'
-                    : 'Vybraný čas: ${selectedTime!.format(context)}'),
-                ElevatedButton(
-                  onPressed: () async {
-                    TimeOfDay? pickedTime = await showTimePicker(
-                      context: context,
-                      initialTime: TimeOfDay.now(),
-                    );
-                    if (pickedTime != null && pickedTime != selectedTime) {
-                      setState(() {
-                        selectedTime = pickedTime;
-                      });
-                    }
-                  },
-                  child: const Text('Vyberte čas'),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Zrušit'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final name = nameController.text;
-                final email = emailController.text;
-                final phone = phoneController.text;
-                final time =
-                    DateFormat('yyyy-MM-dd – HH:mm:ss').format(DateTime.now());
-
-                // If a date or time was selected, use them
-                String selectedDateTime = '';
-                if (selectedDate != null && selectedTime != null) {
-                  final dateTime = DateTime(
-                    selectedDate!.year,
-                    selectedDate!.month,
-                    selectedDate!.day,
-                    selectedTime!.hour,
-                    selectedTime!.minute,
-                  );
-                  selectedDateTime =
-                      DateFormat('yyyy-MM-dd HH:mm').format(dateTime);
-                }
-
-                setState(() {
-                  if (index == -1) {
-                    _submittedData.add({
-                      'name': name,
-                      'email': email,
-                      'phone': phone,
-                      'time': time,
-                      'selectedDateTime': selectedDateTime,
-                    });
-                  } else {
-                    _submittedData[index] = {
-                      'name': name,
-                      'email': email,
-                      'phone': phone,
-                      'time': time,
-                      'selectedDateTime': selectedDateTime,
-                    };
-                  }
-                });
-
-                Navigator.of(context).pop();
-              },
-              child: Text(index == -1 ? 'Přidat' : 'Upravit'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showDeleteConfirmationPacientDialog(BuildContext context, int index) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Potvrďte vyřazení'),
-          content: const Text('Jste si jistý, že chcete pacienta vyřadit?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: const Text('Ne'),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _submittedData
-                      .removeAt(index); // Remove the person from the list
-                });
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: const Text('Ano'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildTimetable(List<Map<String, String>> appointments) {
-    // Generate time slots from 7:00 AM to 6:00 PM (11 hours in total)
-    final hoursInDay = List.generate(11, (index) {
-      final startHour = 7 + index;
-      return DateTime(
-          2024, 1, 1, startHour); // Start from 7:00 AM and increment each hour
-    });
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (var hour in hoursInDay) _buildTimeSlotColumn(hour, appointments),
-      ],
-    );
-  }
-
-  Widget _buildTimeSlotColumn(
-      DateTime hour, List<Map<String, String>> appointments) {
-    final hourStart = DateFormat('yyyy-MM-dd HH:mm').format(hour);
-
-    // Find all appointments for this specific hour
-    final currentHourAppointments = appointments.where((person) {
-      final startTime =
-          DateFormat('yyyy-MM-dd HH:mm').parse(person['selectedDateTime']!);
-      return startTime.hour == hour.hour;
-    }).toList();
-
-    // Return the column for this specific time slot (hour)
-    return Column(
-      children: [
-        // Display the time at the top of each column with padding
-        Padding(
-          padding: const EdgeInsets.symmetric(
-              vertical: 8.0), // Adjust the padding as needed
-          child: Text(
-            DateFormat('HH:mm').format(hour),
-            style: const TextStyle(
-                fontWeight: FontWeight.bold), // Optionally, make the time bold
-          ),
-        ),
-        const SizedBox(
-            height: 8), // Space between time label and the appointments
-        // Display the appointments in this time slot
-        for (var appointment in currentHourAppointments)
-          _buildAppointmentBox(appointment),
-      ],
-    );
-  }
-
-  Widget _buildAppointmentBox(Map<String, String> appointment) {
-    final startTime =
-        DateFormat('yyyy-MM-dd HH:mm').parse(appointment['selectedDateTime']!);
-    final endTime =
-        startTime.add(const Duration(minutes: 20)); // 20 minutes duration
-
-    final startMinute = startTime.minute;
-    final endMinute = endTime.minute;
-
-    // Calculate the position of the box based on the start minute
-    const boxHeight = 40.0; // Height of each appointment box
-    final boxOffset = (startMinute / 60) * boxHeight;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-          vertical: 4.0), // Padding around the appointment box
-      child: Container(
-        margin: EdgeInsets.only(bottom: boxOffset),
-        width: 60, // Width of each appointment box
-        height: boxHeight, // Height of each appointment box
-        color: Colors.blueAccent, // Color of the box
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              appointment['name'] ?? '',
-              style: const TextStyle(color: Colors.white, fontSize: 10),
-              textAlign: TextAlign.center,
-            ),
-            Text(
-              '${DateFormat('HH:mm').format(startTime)} - ${DateFormat('HH:mm').format(endTime)}',
-              style: const TextStyle(color: Colors.white, fontSize: 8),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
       ),
     );
   }
