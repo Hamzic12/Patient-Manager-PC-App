@@ -48,6 +48,9 @@ class PacientManagementPC extends StatefulWidget {
 
 class _PacientManagementPCState extends State<PacientManagementPC> {
   String _selectedPage = 'Domů';
+  String? _loginName;
+  String? _loginTime;
+
   final List<Map<String, String>> _submittedData = [];
   final List<Map<String, dynamic>> _inventoryItems = [];
 
@@ -58,6 +61,62 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
     return primaryColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
   }
 
+  void _showLoginDialog() {
+    String username = '';
+    String password = '';
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Login"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                decoration: const InputDecoration(labelText: "Username"),
+                onChanged: (value) {
+                  username = value;
+                },
+              ),
+              TextField(
+                decoration: const InputDecoration(labelText: "Password"),
+                obscureText: true,
+                onChanged: (value) {
+                  password = value;
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                if (username.isNotEmpty && password.isNotEmpty) {
+                  setState(() {
+                    _loginName = username;
+                    _loginTime = DateTime.now().toLocal().toString();
+                  });
+                  Navigator.of(context).pop(); // Close the dialog
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Please enter valid credentials")),
+                  );
+                }
+              },
+              child: const Text("Login"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,12 +124,18 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
         title: Text(
           'Pacient Manager PC',
           style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: getTextColor(context)), // Title text styling
+            fontWeight: FontWeight.bold,
+            color: getTextColor(context),
+          ),
         ),
-        backgroundColor:
-            Theme.of(context).primaryColor, // Background color of the header
-        centerTitle: true, // Center the title
+        backgroundColor: Theme.of(context).primaryColor,
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.login),
+            onPressed: _showLoginDialog, // Show the login dialog when clicked
+          ),
+        ],
       ),
       body: Row(
         children: [
@@ -129,6 +194,32 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
   }
 
   Widget _getPageContent() {
+    if (_selectedPage == 'Domů') {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (_loginName != null && _loginTime != null)
+            Column(
+              children: [
+                Text(
+                  'Logged in as: $_loginName',
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  'Login time: $_loginTime',
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ],
+            )
+          else
+            const Text(
+              'You are not logged in.',
+              style: TextStyle(fontSize: 18),
+            ),
+        ],
+      );
+    }
+
     switch (_selectedPage) {
       case 'Pacienti':
         return _buildPacientiPage();
@@ -144,8 +235,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
     }
   }
 
-  Widget _buildPacientiPage() {
-    
+  Widget _buildPacientiPage() { 
     void _showFormDialog(BuildContext context, int index) {
     final nameController = TextEditingController();
     final emailController = TextEditingController();
