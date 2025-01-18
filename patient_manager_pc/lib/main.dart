@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() {
   runApp(const MyApp());
@@ -20,6 +21,13 @@ class MyApp extends StatelessWidget {
         primarySwatch: createMaterialColor(const Color(0xFF45AC8B)), // Add a primary swatch
       ),
       home: const PacientManagementPC(),
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      supportedLocales: [
+        const Locale('cs'), // Czech
+      ],
     );
   }
   
@@ -236,7 +244,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
   }
 
   Widget _buildPacientiPage() { 
-    void _showFormDialog(BuildContext context, int index) {
+    void showFormDialog(BuildContext context, int index) {
     final nameController = TextEditingController();
     final emailController = TextEditingController();
     final phoneController = TextEditingController();
@@ -283,8 +291,9 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                     DateTime? pickedDate = await showDatePicker(
                       context: context,
                       initialDate: DateTime.now(),
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2101),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime(DateTime.now().year + 1, 12, 31), // End of next year,
+                      locale: const Locale('cs'),
                     );
                     if (pickedDate != null && pickedDate != selectedDate) {
                       setState(() {
@@ -371,7 +380,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
     );
   }
 
-  void _showDeleteConfirmationPacientDialog(BuildContext context, int index) {
+  void showDeleteConfirmationPacientDialog(BuildContext context, int index) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -453,14 +462,14 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                                   IconButton(
                                     icon: const Icon(Icons.edit),
                                     onPressed: () {
-                                      _showFormDialog(context, index);
+                                      showFormDialog(context, index);
                                     },
                                   ),
                                   // Delete Icon
                                   IconButton(
                                     icon: const Icon(Icons.delete),
                                     onPressed: () {
-                                      _showDeleteConfirmationPacientDialog(
+                                      showDeleteConfirmationPacientDialog(
                                           context, index);
                                     },
                                   ),
@@ -479,7 +488,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
           bottom: 16,
           right: 16,
           child: FloatingActionButton(
-            onPressed: () => _showFormDialog(context, -1), // Open form dialog
+            onPressed: () => showFormDialog(context, -1), // Open form dialog
             backgroundColor:
                 Theme.of(context).primaryColor, // Use theme's primary color
             child: const Icon(Icons.add, color: Colors.white),
@@ -510,7 +519,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
       return timeA.compareTo(timeB);
     });
 
-Widget _buildAppointmentBox(Map<String, String> appointment) {
+Widget buildAppointmentBox(Map<String, String> appointment) {
     final startTime =
         DateFormat('yyyy-MM-dd HH:mm').parse(appointment['selectedDateTime']!);
     final endTime =
@@ -550,7 +559,7 @@ Widget _buildAppointmentBox(Map<String, String> appointment) {
     );
   }
 
-Widget _buildTimeSlotColumn(
+Widget buildTimeSlotColumn(
       DateTime hour, List<Map<String, String>> appointments) {
     final hourStart = DateFormat('yyyy-MM-dd HH:mm').format(hour);
 
@@ -578,12 +587,12 @@ Widget _buildTimeSlotColumn(
             height: 8), // Space between time label and the appointments
         // Display the appointments in this time slot
         for (var appointment in currentHourAppointments)
-          _buildAppointmentBox(appointment),
+          buildAppointmentBox(appointment),
       ],
     );
   }
 
-Widget _buildTimetable(List<Map<String, String>> appointments) {
+Widget buildTimetable(List<Map<String, String>> appointments) {
     // Generate time slots from 7:00 AM to 6:00 PM (11 hours in total)
     final hoursInDay = List.generate(11, (index) {
       final startHour = 7 + index;
@@ -594,7 +603,7 @@ Widget _buildTimetable(List<Map<String, String>> appointments) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (var hour in hoursInDay) _buildTimeSlotColumn(hour, appointments),
+        for (var hour in hoursInDay) buildTimeSlotColumn(hour, appointments),
       ],
     );
   }
@@ -614,7 +623,7 @@ Widget _buildTimetable(List<Map<String, String>> appointments) {
             Expanded(
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: _buildTimetable(todayAppointments),
+                child: buildTimetable(todayAppointments),
               ),
             ),
           ],
@@ -627,7 +636,7 @@ Widget _buildTimetable(List<Map<String, String>> appointments) {
     final ImagePicker picker = ImagePicker();
 
 // Method to show the Add Item dialog
-  void _showAddItemDialog(BuildContext context) {
+  void showAddItemDialog(BuildContext context) {
     final nameController = TextEditingController();
     final capacityController = TextEditingController();
 
@@ -683,7 +692,7 @@ Widget _buildTimetable(List<Map<String, String>> appointments) {
   }
 
 // Method to show the Edit Item dialog
-  void _showEditItemDialog(BuildContext context, int index) {
+  void showEditItemDialog(BuildContext context, int index) {
     final nameController =
         TextEditingController(text: _inventoryItems[index]['name']);
     final capacityController = TextEditingController(
@@ -732,7 +741,7 @@ Widget _buildTimetable(List<Map<String, String>> appointments) {
     );
   }
 
-void _showDeleteConfirmationItemDialog(BuildContext context, int index) {
+void showDeleteConfirmationItemDialog(BuildContext context, int index) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -761,79 +770,6 @@ void _showDeleteConfirmationItemDialog(BuildContext context, int index) {
       },
     );
   }
-
-    void showAddItemDialog(BuildContext context) async {
-      final nameController = TextEditingController();
-      final capacityController = TextEditingController();
-      XFile? pickedImage;
-
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Přidej předmět'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Název'),
-                  ),
-                  TextField(
-                    controller: capacityController,
-                    decoration: const InputDecoration(labelText: 'Počet'),
-                    keyboardType: TextInputType.number,
-                  ),
-                  Row(
-                    children: [
-                      ElevatedButton(
-                        onPressed: () async {
-                          final pickedFile = await picker.pickImage(
-                            source: ImageSource.gallery,
-                          );
-                          if (pickedFile != null) {
-                            pickedImage = pickedFile;
-                          }
-                        },
-                        child: const Text('Vybrat obrázek'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Zrušit'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  final name = nameController.text;
-                  final capacity = capacityController.text;
-
-                  if (name.isNotEmpty && capacity.isNotEmpty) {
-                    setState(() {
-                      _inventoryItems.add({
-                        'name': name,
-                        'capacity': int.tryParse(capacity) ?? 0,
-                        'image': pickedImage != null
-                            ? File(pickedImage!.path)
-                            : null,
-                      });
-                    });
-                  }
-
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Přidat'),
-              ),
-            ],
-          );
-        },
-      );
-    }
 
     // Function to update the capacity
     void updateCapacity(int index, int change) {
@@ -867,76 +803,6 @@ void _showDeleteConfirmationItemDialog(BuildContext context, int index) {
                   Navigator.of(context).pop();
                 },
                 child: const Text('Ano'),
-              ),
-            ],
-          );
-        },
-      );
-    }
-
-    // Function to show the edit item dialog
-    void showEditItemDialog(BuildContext context, int index) {
-      final nameController =
-          TextEditingController(text: _inventoryItems[index]['name']);
-      final capacityController = TextEditingController(
-          text: _inventoryItems[index]['capacity'].toString());
-      XFile? pickedImage;
-
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Upravit předmět'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Název'),
-                  ),
-                  TextField(
-                    controller: capacityController,
-                    decoration: const InputDecoration(labelText: 'Počet'),
-                    keyboardType: TextInputType.number,
-                  ),
-                  Row(
-                    children: [
-                      ElevatedButton(
-                        onPressed: () async {
-                          final pickedFile = await picker.pickImage(
-                            source: ImageSource.gallery,
-                          );
-                          if (pickedFile != null) {
-                            pickedImage = pickedFile;
-                          }
-                        },
-                        child: const Text('Vybrat obrázek'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Zrušit'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  final name = nameController.text;
-                  final capacity = int.tryParse(capacityController.text) ?? 0;
-                  setState(() {
-                    _inventoryItems[index]['name'] = name;
-                    _inventoryItems[index]['capacity'] = capacity;
-                    _inventoryItems[index]['image'] = pickedImage != null
-                        ? File(pickedImage!.path)
-                        : _inventoryItems[index]['image'];
-                  });
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Upravit'),
               ),
             ],
           );
