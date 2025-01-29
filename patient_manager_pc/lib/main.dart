@@ -21,12 +21,12 @@ class MyApp extends StatelessWidget {
         primarySwatch: createMaterialColor(const Color(0xFF45AC8B)), // Add a primary swatch
       ),
       home: const PacientManagementPC(),
-      localizationsDelegates: [
+      localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
       ],
-      supportedLocales: [
-        const Locale('cs'), // Czech
+      supportedLocales: const [
+        Locale('cs'), // Czech
       ],
     );
   }
@@ -59,8 +59,9 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
   String? _loginName;
   String? _loginTime;
 
-  final List<Map<String, String>> _submittedData = [];
+  final List<Map<String, String>> _patientsInfo = [];
   final List<Map<String, dynamic>> _inventoryItems = [];
+  final List<Map<String, dynamic>> _meetings = [];
 
   // Method to determine whether the primaryColor is light or dark
   Color getTextColor(BuildContext context) {
@@ -249,14 +250,11 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
     final emailController = TextEditingController();
     final phoneController = TextEditingController();
 
-    DateTime? selectedDate;
-    TimeOfDay? selectedTime;
-
     if (index != -1) {
       // Pre-fill the form with the person's data
-      nameController.text = _submittedData[index]['name'] ?? '';
-      emailController.text = _submittedData[index]['email'] ?? '';
-      phoneController.text = _submittedData[index]['phone'] ?? '';
+      nameController.text = _patientsInfo[index]['name'] ?? '';
+      emailController.text = _patientsInfo[index]['email'] ?? '';
+      phoneController.text = _patientsInfo[index]['phone'] ?? '';
     }
 
     showDialog(
@@ -282,46 +280,6 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                       const InputDecoration(labelText: 'Telefonní číslo'),
                 ),
                 const SizedBox(height: 10),
-                // Date picker button
-                Text(selectedDate == null
-                    ? 'Select Date'
-                    : 'Selected Date: ${DateFormat('yyyy-MM-dd').format(selectedDate!)}'),
-                ElevatedButton(
-                  onPressed: () async {
-                    DateTime? pickedDate = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime.now(),
-                      firstDate: DateTime.now(),
-                      lastDate: DateTime(DateTime.now().year + 1, 12, 31), // End of next year,
-                      locale: const Locale('cs'),
-                    );
-                    if (pickedDate != null && pickedDate != selectedDate) {
-                      setState(() {
-                        selectedDate = pickedDate;
-                      });
-                    }
-                  },
-                  child: const Text('Vyber datum'),
-                ),
-                const SizedBox(height: 10),
-                // Time picker button
-                Text(selectedTime == null
-                    ? 'Vyberte čas'
-                    : 'Vybraný čas: ${selectedTime!.format(context)}'),
-                ElevatedButton(
-                  onPressed: () async {
-                    TimeOfDay? pickedTime = await showTimePicker(
-                      context: context,
-                      initialTime: TimeOfDay.now(),
-                    );
-                    if (pickedTime != null && pickedTime != selectedTime) {
-                      setState(() {
-                        selectedTime = pickedTime;
-                      });
-                    }
-                  },
-                  child: const Text('Vyberte čas'),
-                ),
               ],
             ),
           ),
@@ -335,37 +293,19 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                 final name = nameController.text;
                 final email = emailController.text;
                 final phone = phoneController.text;
-                final time =
-                    DateFormat('yyyy-MM-dd – HH:mm:ss').format(DateTime.now());
-
-                // If a date or time was selected, use them
-                String selectedDateTime = '';
-                if (selectedDate != null && selectedTime != null) {
-                  final dateTime = DateTime(
-                    selectedDate!.year,
-                    selectedDate!.month,
-                    selectedDate!.day,
-                    selectedTime!.hour,
-                    selectedTime!.minute,
-                  );
-                  selectedDateTime =
-                      DateFormat('yyyy-MM-dd HH:mm').format(dateTime);
-                }
 
                 setState(() {
                   if (index == -1) {
-                    _submittedData.add({
+                    _patientsInfo.add({
                       'name': name,
                       'email': email,
                       'phone': phone,
-                      'selectedDateTime': selectedDateTime,
                     });
                   } else {
-                    _submittedData[index] = {
+                    _patientsInfo[index] = {
                       'name': name,
                       'email': email,
                       'phone': phone,
-                      'selectedDateTime': selectedDateTime,
                     };
                   }
                 });
@@ -397,7 +337,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
             TextButton(
               onPressed: () {
                 setState(() {
-                  _submittedData
+                  _patientsInfo
                       .removeAt(index); // Remove the person from the list
                 });
                 Navigator.of(context).pop(); // Close the dialog
@@ -428,7 +368,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
 
               // Expanded area for the patient list or empty state message
               Expanded(
-                child: _submittedData.isEmpty
+                child: _patientsInfo.isEmpty
                     ? const Center(
                         child: Text(
                           'Nemáme žádného objednaného pacienta.',
@@ -437,22 +377,20 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                         ),
                       )
                     : ListView.builder(
-                        itemCount: _submittedData.length,
+                        itemCount: _patientsInfo.length,
                         itemBuilder: (context, index) {
                           return Card(
                             margin: const EdgeInsets.symmetric(vertical: 8),
                             child: ListTile(
                               title: Text(
-                                  _submittedData[index]['name'] ?? 'Neuvedeno'),
+                                  _patientsInfo[index]['name'] ?? 'Neuvedeno'),
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                      'Email: ${_submittedData[index]['email'] ?? 'Neuvedeno'}'),
+                                      'Email: ${_patientsInfo[index]['email'] ?? 'Neuvedeno'}'),
                                   Text(
-                                      'Telefon: ${_submittedData[index]['phone'] ?? 'Neuvedeno'}'),
-                                  Text(
-                                      'Objednaná schůzka: ${_submittedData[index]['selectedDateTime'] ?? 'Neuvedeno'}'),
+                                      'Telefon: ${_patientsInfo[index]['phone'] ?? 'Neuvedeno'}'),
                                 ],
                               ),
                               trailing: Row(
@@ -499,138 +437,108 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
   }
 
   Widget _buildSchuzkyPage() {
-    // Get today's date
-    final today = DateTime.now();
-    final dateFormatter = DateFormat('yyyy-MM-dd');
-    final currentDate = dateFormatter.format(today);
-
-    // Filter persons that have appointments on today's date
-    final todayAppointments = _submittedData.where((person) {
-      return person['selectedDateTime'] != null &&
-          person['selectedDateTime']!.startsWith(currentDate);
-    }).toList();
-
-    // Sort appointments by start time
-    todayAppointments.sort((a, b) {
-      final timeA =
-          DateFormat('yyyy-MM-dd HH:mm').parse(a['selectedDateTime']!);
-      final timeB =
-          DateFormat('yyyy-MM-dd HH:mm').parse(b['selectedDateTime']!);
-      return timeA.compareTo(timeB);
-    });
-
-Widget buildAppointmentBox(Map<String, String> appointment) {
-    final startTime =
-        DateFormat('yyyy-MM-dd HH:mm').parse(appointment['selectedDateTime']!);
-    final endTime =
-        startTime.add(const Duration(minutes: 20)); // 20 minutes duration
-
-    final startMinute = startTime.minute;
-    final endMinute = endTime.minute;
-
-    // Calculate the position of the box based on the start minute
-    const boxHeight = 40.0; // Height of each appointment box
-    final boxOffset = (startMinute / 60) * boxHeight;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-          vertical: 4.0), // Padding around the appointment box
-      child: Container(
-        margin: EdgeInsets.only(bottom: boxOffset),
-        width: 60, // Width of each appointment box
-        height: boxHeight, // Height of each appointment box
-        color: Colors.blueAccent, // Color of the box
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              appointment['name'] ?? '',
-              style: const TextStyle(color: Colors.white, fontSize: 10),
-              textAlign: TextAlign.center,
-            ),
-            Text(
-              '${DateFormat('HH:mm').format(startTime)} - ${DateFormat('HH:mm').format(endTime)}',
-              style: const TextStyle(color: Colors.white, fontSize: 8),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-Widget buildTimeSlotColumn(
-      DateTime hour, List<Map<String, String>> appointments) {
-    final hourStart = DateFormat('yyyy-MM-dd HH:mm').format(hour);
-
-    // Find all appointments for this specific hour
-    final currentHourAppointments = appointments.where((person) {
-      final startTime =
-          DateFormat('yyyy-MM-dd HH:mm').parse(person['selectedDateTime']!);
-      return startTime.hour == hour.hour;
-    }).toList();
-
-    // Return the column for this specific time slot (hour)
-    return Column(
-      children: [
-        // Display the time at the top of each column with padding
-        Padding(
-          padding: const EdgeInsets.symmetric(
-              vertical: 8.0), // Adjust the padding as needed
-          child: Text(
-            DateFormat('HH:mm').format(hour),
-            style: const TextStyle(
-                fontWeight: FontWeight.bold), // Optionally, make the time bold
+  
+  Future<String?> _selectPatient() async {
+  return await showDialog<String>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text("Select a Patient"),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: _patientsInfo.length,
+            itemBuilder: (context, index) {
+              return ListTile(
+                title: Text(_patientsInfo[index]["name"] ?? "Unknown"),
+                onTap: () {
+                  Navigator.of(context).pop(_patientsInfo[index]["name"]);
+                },
+              );
+            },
           ),
         ),
-        const SizedBox(
-            height: 8), // Space between time label and the appointments
-        // Display the appointments in this time slot
-        for (var appointment in currentHourAppointments)
-          buildAppointmentBox(appointment),
-      ],
-    );
-  }
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(null),
+            child: const Text("Cancel"),
+          ),
+        ],
+      );
+    },
+  );
+}
 
-Widget buildTimetable(List<Map<String, String>> appointments) {
-    // Generate time slots from 7:00 AM to 6:00 PM (11 hours in total)
-    final hoursInDay = List.generate(11, (index) {
-      final startHour = 7 + index;
+Future<DateTime?> _selectDateTime() async {
+  DateTime now = DateTime.now();
+  DateTime? selectedDate = await showDatePicker(
+    context: context,
+    initialDate: now,
+    firstDate: now,
+    lastDate: now.add(const Duration(days: 365)),
+  );
+
+  if (selectedDate != null) {
+    TimeOfDay? selectedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (selectedTime != null) {
       return DateTime(
-          2024, 1, 1, startHour); // Start from 7:00 AM and increment each hour
-    });
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (var hour in hoursInDay) buildTimeSlotColumn(hour, appointments),
-      ],
-    );
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day,
+        selectedTime.hour,
+        selectedTime.minute,
+      );
+    }
   }
+  return null;
+}
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Schůzky'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Rozvrh na $currentDate',
-                style: const TextStyle(fontSize: 18)),
-            const SizedBox(height: 16),
-            Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: buildTimetable(todayAppointments),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  Future<void> _scheduleMeeting() async {
+  String? selectedPatient = await _selectPatient();
+  if (selectedPatient != null) {
+    DateTime? selectedDate = await _selectDateTime();
+    if (selectedDate != null) {
+      setState(() {
+        _meetings.add({"name": selectedPatient, "datetime": selectedDate});
+      });
+    }
   }
+}
+
+
+  return Scaffold(
+    appBar: AppBar(title: const Text("Schůzky")),
+    body: _meetings.isEmpty
+        ? const Center(child: Text("No scheduled meetings."))
+        : ListView.builder(
+            itemCount: _meetings.length,
+            itemBuilder: (context, index) {
+              final meeting = _meetings[index];
+              return ListTile(
+                title: Text(meeting["name"]),
+                subtitle: Text(DateFormat("yyyy-MM-dd HH:mm").format(meeting["datetime"])),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: () {
+                    setState(() {
+                      _meetings.removeAt(index);
+                    });
+                  },
+                ),
+              );
+            },
+          ),
+    floatingActionButton: FloatingActionButton(
+      child: const Icon(Icons.add),
+      onPressed: _scheduleMeeting,
+    ),
+  );
+}
+
 
   Widget _buildInventarPage() {
     final ImagePicker picker = ImagePicker();
