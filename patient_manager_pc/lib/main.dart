@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 void main() {
   runApp(const MyApp());
@@ -509,29 +510,75 @@ Future<DateTime?> _selectDateTime() async {
   }
 }
 
+DateTime _selectedDay = DateTime.now();
 
-  return Scaffold(
+List<Map<String, dynamic>> _getMeetingsForDay(DateTime day) {
+  return _meetings
+      .where((meeting) => isSameDay(meeting["datetime"], day))
+      .toList();
+}
+
+Widget _buildMeetingsList() {
+  List<Map<String, dynamic>> meetingsForSelectedDay = _getMeetingsForDay(_selectedDay);
+
+  if (meetingsForSelectedDay.isEmpty) {
+    return const Center(child: Text("No meetings on this day."));
+  }
+
+  return ListView.builder(
+    itemCount: meetingsForSelectedDay.length,
+    itemBuilder: (context, index) {
+      final meeting = meetingsForSelectedDay[index];
+      return ListTile(
+        title: Text(meeting["name"]),
+        subtitle: Text(DateFormat("HH:mm").format(meeting["datetime"])),
+        trailing: IconButton(
+          icon: const Icon(Icons.delete),
+          onPressed: () {
+            setState(() {
+              _meetings.remove(meeting);
+            });
+          },
+        ),
+      );
+    },
+  );
+}
+
+
+return Scaffold(
     appBar: AppBar(title: const Text("Schůzky")),
-    body: _meetings.isEmpty
-        ? const Center(child: Text("No scheduled meetings."))
-        : ListView.builder(
-            itemCount: _meetings.length,
-            itemBuilder: (context, index) {
-              final meeting = _meetings[index];
-              return ListTile(
-                title: Text(meeting["name"]),
-                subtitle: Text(DateFormat("yyyy-MM-dd HH:mm").format(meeting["datetime"])),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () {
-                    setState(() {
-                      _meetings.removeAt(index);
-                    });
-                  },
-                ),
-              );
-            },
+    body: Column(
+      children: [
+        TableCalendar(
+          firstDay: DateTime.utc(2020, 1, 1),
+          lastDay: DateTime.utc(2030, 12, 31),
+          focusedDay: DateTime.now(),
+          calendarFormat: CalendarFormat.week, // Show week view
+          eventLoader: (day) => _getMeetingsForDay(day),
+          headerStyle: const HeaderStyle(formatButtonVisible: false),
+          calendarStyle: const CalendarStyle(
+            todayDecoration: BoxDecoration(
+              color: Colors.blue,
+              shape: BoxShape.circle,
+            ),
+            selectedDecoration: BoxDecoration(
+              color: Colors.green,
+              shape: BoxShape.circle,
+            ),
           ),
+          selectedDayPredicate: (day) {
+            return isSameDay(_selectedDay, day);
+          },
+          onDaySelected: (selectedDay, focusedDay) {
+            setState(() {
+              _selectedDay = selectedDay;
+            });
+          },
+        ),
+        Expanded(child: _buildMeetingsList()),
+      ],
+    ),
     floatingActionButton: FloatingActionButton(
       child: const Icon(Icons.add),
       onPressed: _scheduleMeeting,
