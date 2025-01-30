@@ -606,6 +606,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
     void showAddItemDialog(BuildContext context) {
       final nameController = TextEditingController();
       final capacityController = TextEditingController();
+      XFile? pickedImage;
 
       showDialog(
         context: context,
@@ -626,6 +627,31 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   ),
+                  const SizedBox(height: 10),
+                  // Button for selecting an image
+                  ElevatedButton(
+                    onPressed: () async {
+                      final pickedFile =
+                          await picker.pickImage(source: ImageSource.gallery);
+                      if (pickedFile != null) {
+                        setState(() {
+                          pickedImage = pickedFile;
+                        });
+                      }
+                    },
+                    child: const Text('Vyber obrázek'),
+                  ),
+                  const SizedBox(height: 10),
+                  // Display text below the button
+                  Text(
+                    pickedImage == null
+                        ? 'Obrázek nevybrán'
+                        : pickedImage!.name,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: pickedImage == null ? Colors.red : Colors.black,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -644,7 +670,9 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                       _inventoryItems.add({
                         'name': name,
                         'capacity': int.tryParse(capacity ?? '0') ?? 0,
-                        'image': null, // Placeholder image for now
+                        'image': pickedImage != null
+                            ? File(pickedImage!.path)
+                            : null, // Image or null
                       });
                     });
                   }
@@ -665,6 +693,12 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
           TextEditingController(text: _inventoryItems[index]['name']);
       final capacityController = TextEditingController(
           text: _inventoryItems[index]['capacity'].toString());
+      XFile? pickedImage = null;
+
+      // If there is already an image, use it for editing
+      if (_inventoryItems[index]['image'] != null) {
+        pickedImage = XFile(_inventoryItems[index]['image']!.path);
+      }
 
       showDialog(
         context: context,
@@ -684,6 +718,31 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                     decoration: const InputDecoration(labelText: 'Počet'),
                     keyboardType: TextInputType.number,
                   ),
+                  const SizedBox(height: 10),
+                  // Button for selecting an image
+                  ElevatedButton(
+                    onPressed: () async {
+                      final pickedFile =
+                          await picker.pickImage(source: ImageSource.gallery);
+                      if (pickedFile != null) {
+                        setState(() {
+                          pickedImage = pickedFile;
+                        });
+                      }
+                    },
+                    child: const Text('Vyber obrázek'),
+                  ),
+                  const SizedBox(height: 10),
+                  // Display text below the button
+                  Text(
+                    pickedImage == null
+                        ? 'Obrázek nevybrán'
+                        : pickedImage!.name,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: pickedImage == null ? Colors.red : Colors.black,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -698,6 +757,9 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                     _inventoryItems[index]['name'] = nameController.text;
                     _inventoryItems[index]['capacity'] =
                         int.tryParse(capacityController.text) ?? 0;
+                    // Set the new image if picked, otherwise keep it null
+                    _inventoryItems[index]['image'] =
+                        pickedImage != null ? File(pickedImage!.path) : null;
                   });
                   Navigator.of(context).pop();
                 },
