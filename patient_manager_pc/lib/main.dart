@@ -20,7 +20,8 @@ class MyApp extends StatelessWidget {
       title: 'Pacienty Management PC',
       theme: ThemeData(
         primaryColor: const Color(0xFF45AC8B), // Set custom primary color
-        primarySwatch: createMaterialColor(const Color(0xFF45AC8B)), // Add a primary swatch
+        primarySwatch: createMaterialColor(
+            const Color(0xFF45AC8B)), // Add a primary swatch
       ),
       home: const PacientManagementPC(),
       localizationsDelegates: const [
@@ -32,9 +33,20 @@ class MyApp extends StatelessWidget {
       ],
     );
   }
-  
+
   MaterialColor createMaterialColor(Color color) {
-    List<int> strengths = <int>[50, 100, 200, 300, 400, 500, 600, 700, 800, 900];
+    List<int> strengths = <int>[
+      50,
+      100,
+      200,
+      300,
+      400,
+      500,
+      600,
+      700,
+      800,
+      900
+    ];
     Map<int, Color> swatch = {};
     for (int i = 0; i < strengths.length; i++) {
       final strength = strengths[i];
@@ -116,7 +128,8 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                   Navigator.of(context).pop(); // Close the dialog
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Please enter valid credentials")),
+                    const SnackBar(
+                        content: Text("Please enter valid credentials")),
                   );
                 }
               },
@@ -214,7 +227,8 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
               children: [
                 Text(
                   'Logged in as: $_loginName',
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 Text(
                   'Login time: $_loginTime',
@@ -246,112 +260,112 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
     }
   }
 
-  Widget _buildPacientiPage() { 
+  Widget _buildPacientiPage() {
     void showFormDialog(BuildContext context, int index) {
-    final nameController = TextEditingController();
-    final emailController = TextEditingController();
-    final phoneController = TextEditingController();
+      final nameController = TextEditingController();
+      final emailController = TextEditingController();
+      final phoneController = TextEditingController();
 
-    if (index != -1) {
-      // Pre-fill the form with the person's data
-      nameController.text = _patientsInfo[index]['name'] ?? '';
-      emailController.text = _patientsInfo[index]['email'] ?? '';
-      phoneController.text = _patientsInfo[index]['phone'] ?? '';
+      if (index != -1) {
+        // Pre-fill the form with the person's data
+        nameController.text = _patientsInfo[index]['name'] ?? '';
+        emailController.text = _patientsInfo[index]['email'] ?? '';
+        phoneController.text = _patientsInfo[index]['phone'] ?? '';
+      }
+
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(index == -1 ? 'Přidat pacienta' : 'Upravit pacienta'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: 'Jméno'),
+                  ),
+                  TextField(
+                    controller: emailController,
+                    decoration: const InputDecoration(labelText: 'E-mail'),
+                  ),
+                  TextField(
+                    controller: phoneController,
+                    decoration:
+                        const InputDecoration(labelText: 'Telefonní číslo'),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Zrušit'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final name = nameController.text;
+                  final email = emailController.text;
+                  final phone = phoneController.text;
+
+                  setState(() {
+                    if (index == -1) {
+                      _patientsInfo.add({
+                        'name': name,
+                        'email': email,
+                        'phone': phone,
+                      });
+                    } else {
+                      _patientsInfo[index] = {
+                        'name': name,
+                        'email': email,
+                        'phone': phone,
+                      };
+                    }
+                  });
+
+                  Navigator.of(context).pop();
+                },
+                child: Text(index == -1 ? 'Přidat' : 'Upravit'),
+              ),
+            ],
+          );
+        },
+      );
     }
 
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(index == -1 ? 'Přidat pacienta' : 'Upravit pacienta'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Jméno'),
-                ),
-                TextField(
-                  controller: emailController,
-                  decoration: const InputDecoration(labelText: 'E-mail'),
-                ),
-                TextField(
-                  controller: phoneController,
-                  decoration:
-                      const InputDecoration(labelText: 'Telefonní číslo'),
-                ),
-                const SizedBox(height: 10),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Zrušit'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final name = nameController.text;
-                final email = emailController.text;
-                final phone = phoneController.text;
+    void showDeleteConfirmationPacientDialog(BuildContext context, int index) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Potvrďte vyřazení'),
+            content: const Text('Jste si jistý, že chcete pacienta vyřadit?'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                },
+                child: const Text('Ne'),
+              ),
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _patientsInfo
+                        .removeAt(index); // Remove the person from the list
+                  });
+                  Navigator.of(context).pop(); // Close the dialog
+                },
+                child: const Text('Ano'),
+              ),
+            ],
+          );
+        },
+      );
+    }
 
-                setState(() {
-                  if (index == -1) {
-                    _patientsInfo.add({
-                      'name': name,
-                      'email': email,
-                      'phone': phone,
-                    });
-                  } else {
-                    _patientsInfo[index] = {
-                      'name': name,
-                      'email': email,
-                      'phone': phone,
-                    };
-                  }
-                });
-
-                Navigator.of(context).pop();
-              },
-              child: Text(index == -1 ? 'Přidat' : 'Upravit'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void showDeleteConfirmationPacientDialog(BuildContext context, int index) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Potvrďte vyřazení'),
-          content: const Text('Jste si jistý, že chcete pacienta vyřadit?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: const Text('Ne'),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _patientsInfo
-                      .removeAt(index); // Remove the person from the list
-                });
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: const Text('Ano'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-    
     return Stack(
       children: [
         Padding(
@@ -423,7 +437,6 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
             ],
           ),
         ),
-
         Positioned(
           bottom: 16,
           right: 16,
@@ -439,294 +452,292 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
   }
 
   Widget _buildSchuzkyPage() {
-  
-  Future<String?> _selectPatient() async {
-  return await showDialog<String>(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text("Select a Patient"),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: _patientsInfo.length,
-            itemBuilder: (context, index) {
-              return ListTile(
-                title: Text(_patientsInfo[index]["name"] ?? "Unknown"),
-                onTap: () {
-                  Navigator.of(context).pop(_patientsInfo[index]["name"]);
+    Future<String?> selectPatient() async {
+      return await showDialog<String>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text("Select a Patient"),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _patientsInfo.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(_patientsInfo[index]["name"] ?? "Unknown"),
+                    onTap: () {
+                      Navigator.of(context).pop(_patientsInfo[index]["name"]);
+                    },
+                  );
                 },
-              );
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(null),
+                child: const Text("Cancel"),
+              ),
+            ],
+          );
+        },
+      );
+    }
+
+    Future<DateTime?> selectDateTime() async {
+      DateTime now = DateTime.now();
+      DateTime? selectedDate = await showDatePicker(
+        context: context,
+        initialDate: now,
+        firstDate: now,
+        lastDate: now.add(const Duration(days: 365)),
+      );
+
+      if (selectedDate != null) {
+        TimeOfDay? selectedTime = await showTimePicker(
+          context: context,
+          initialTime: TimeOfDay.now(),
+        );
+        if (selectedTime != null) {
+          return DateTime(
+            selectedDate.year,
+            selectedDate.month,
+            selectedDate.day,
+            selectedTime.hour,
+            selectedTime.minute,
+          );
+        }
+      }
+      return null;
+    }
+
+    Future<void> scheduleMeeting() async {
+      String? selectedPatient = await selectPatient();
+      if (selectedPatient != null) {
+        DateTime? selectedDate = await selectDateTime();
+        if (selectedDate != null) {
+          setState(() {
+            _meetings.add({"name": selectedPatient, "datetime": selectedDate});
+          });
+        }
+      }
+    }
+
+    DateTime selectedDay = DateTime.now();
+
+    List<Map<String, dynamic>> getMeetingsForDay(DateTime day) {
+      return _meetings
+          .where((meeting) => isSameDay(meeting["datetime"], day))
+          .toList();
+    }
+
+    Widget buildMeetingsList() {
+      List<Map<String, dynamic>> meetingsForSelectedDay =
+          getMeetingsForDay(selectedDay);
+
+      if (meetingsForSelectedDay.isEmpty) {
+        return const Center(child: Text("No meetings on this day."));
+      }
+
+      return ListView.builder(
+        itemCount: meetingsForSelectedDay.length,
+        itemBuilder: (context, index) {
+          final meeting = meetingsForSelectedDay[index];
+          return ListTile(
+            title: Text(meeting["name"]),
+            subtitle: Text(DateFormat("HH:mm").format(meeting["datetime"])),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: () {
+                setState(() {
+                  _meetings.remove(meeting);
+                });
+              },
+            ),
+          );
+        },
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(title: const Text("Schůzky")),
+      body: Column(
+        children: [
+          TableCalendar(
+            firstDay: DateTime.utc(2020, 1, 1),
+            lastDay: DateTime.utc(2030, 12, 31),
+            focusedDay: DateTime.now(),
+            calendarFormat: CalendarFormat.week, // Show week view
+            eventLoader: (day) => getMeetingsForDay(day),
+            headerStyle: const HeaderStyle(formatButtonVisible: false),
+            calendarStyle: const CalendarStyle(
+              todayDecoration: BoxDecoration(
+                color: Colors.blue,
+                shape: BoxShape.circle,
+              ),
+              selectedDecoration: BoxDecoration(
+                color: Colors.green,
+                shape: BoxShape.circle,
+              ),
+            ),
+            selectedDayPredicate: (day) {
+              return isSameDay(selectedDay, day);
+            },
+            onDaySelected: (selectedDay, focusedDay) {
+              setState(() {
+                selectedDay = selectedDay;
+              });
             },
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(null),
-            child: const Text("Cancel"),
-          ),
+          Expanded(child: buildMeetingsList()),
         ],
-      );
-    },
-  );
-}
-
-Future<DateTime?> _selectDateTime() async {
-  DateTime now = DateTime.now();
-  DateTime? selectedDate = await showDatePicker(
-    context: context,
-    initialDate: now,
-    firstDate: now,
-    lastDate: now.add(const Duration(days: 365)),
-  );
-
-  if (selectedDate != null) {
-    TimeOfDay? selectedTime = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: scheduleMeeting,
+        child: const Icon(Icons.add),
+      ),
     );
-    if (selectedTime != null) {
-      return DateTime(
-        selectedDate.year,
-        selectedDate.month,
-        selectedDate.day,
-        selectedTime.hour,
-        selectedTime.minute,
-      );
-    }
   }
-  return null;
-}
-
-  Future<void> _scheduleMeeting() async {
-  String? selectedPatient = await _selectPatient();
-  if (selectedPatient != null) {
-    DateTime? selectedDate = await _selectDateTime();
-    if (selectedDate != null) {
-      setState(() {
-        _meetings.add({"name": selectedPatient, "datetime": selectedDate});
-      });
-    }
-  }
-}
-
-DateTime _selectedDay = DateTime.now();
-
-List<Map<String, dynamic>> _getMeetingsForDay(DateTime day) {
-  return _meetings
-      .where((meeting) => isSameDay(meeting["datetime"], day))
-      .toList();
-}
-
-Widget _buildMeetingsList() {
-  List<Map<String, dynamic>> meetingsForSelectedDay = _getMeetingsForDay(_selectedDay);
-
-  if (meetingsForSelectedDay.isEmpty) {
-    return const Center(child: Text("No meetings on this day."));
-  }
-
-  return ListView.builder(
-    itemCount: meetingsForSelectedDay.length,
-    itemBuilder: (context, index) {
-      final meeting = meetingsForSelectedDay[index];
-      return ListTile(
-        title: Text(meeting["name"]),
-        subtitle: Text(DateFormat("HH:mm").format(meeting["datetime"])),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete),
-          onPressed: () {
-            setState(() {
-              _meetings.remove(meeting);
-            });
-          },
-        ),
-      );
-    },
-  );
-}
-
-
-return Scaffold(
-    appBar: AppBar(title: const Text("Schůzky")),
-    body: Column(
-      children: [
-        TableCalendar(
-          firstDay: DateTime.utc(2020, 1, 1),
-          lastDay: DateTime.utc(2030, 12, 31),
-          focusedDay: DateTime.now(),
-          calendarFormat: CalendarFormat.week, // Show week view
-          eventLoader: (day) => _getMeetingsForDay(day),
-          headerStyle: const HeaderStyle(formatButtonVisible: false),
-          calendarStyle: const CalendarStyle(
-            todayDecoration: BoxDecoration(
-              color: Colors.blue,
-              shape: BoxShape.circle,
-            ),
-            selectedDecoration: BoxDecoration(
-              color: Colors.green,
-              shape: BoxShape.circle,
-            ),
-          ),
-          selectedDayPredicate: (day) {
-            return isSameDay(_selectedDay, day);
-          },
-          onDaySelected: (selectedDay, focusedDay) {
-            setState(() {
-              _selectedDay = selectedDay;
-            });
-          },
-        ),
-        Expanded(child: _buildMeetingsList()),
-      ],
-    ),
-    floatingActionButton: FloatingActionButton(
-      child: const Icon(Icons.add),
-      onPressed: _scheduleMeeting,
-    ),
-  );
-}
-
 
   Widget _buildInventarPage() {
     final ImagePicker picker = ImagePicker();
 
 // Method to show the Add Item dialog
-  void showAddItemDialog(BuildContext context) {
-    final nameController = TextEditingController();
-    final capacityController = TextEditingController();
+    void showAddItemDialog(BuildContext context) {
+      final nameController = TextEditingController();
+      final capacityController = TextEditingController();
 
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Přidej vybavení'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Název'),
-                ),
-                TextField(
-                  controller: capacityController,
-                  decoration: const InputDecoration(labelText: 'Počet'),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                ),
-              ],
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Přidej vybavení'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: 'Název'),
+                  ),
+                  TextField(
+                    controller: capacityController,
+                    decoration: const InputDecoration(labelText: 'Počet'),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  ),
+                ],
+              ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Zrušit'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final name = nameController.text;
-                final capacity = capacityController.text;
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Zrušit'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final name = nameController.text;
+                  final capacity = capacityController.text;
 
-                if (name.isNotEmpty && capacity.isNotEmpty) {
-                  setState(() {
-                    _inventoryItems.add({
-                      'name': name,
-                      'capacity': int.tryParse(capacity?? '0') ?? 0,
-                      'image': null, // Placeholder image for now
+                  if (name.isNotEmpty && capacity.isNotEmpty) {
+                    setState(() {
+                      _inventoryItems.add({
+                        'name': name,
+                        'capacity': int.tryParse(capacity ?? '0') ?? 0,
+                        'image': null, // Placeholder image for now
+                      });
                     });
-                  });
-                }
+                  }
 
-                Navigator.of(context).pop();
-              },
-              child: const Text('Přidat'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Přidat'),
+              ),
+            ],
+          );
+        },
+      );
+    }
 
 // Method to show the Edit Item dialog
-  void showEditItemDialog(BuildContext context, int index) {
-    final nameController =
-        TextEditingController(text: _inventoryItems[index]['name']);
-    final capacityController = TextEditingController(
-        text: _inventoryItems[index]['capacity'].toString());
+    void showEditItemDialog(BuildContext context, int index) {
+      final nameController =
+          TextEditingController(text: _inventoryItems[index]['name']);
+      final capacityController = TextEditingController(
+          text: _inventoryItems[index]['capacity'].toString());
 
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Upravit vybavení'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Název'),
-                ),
-                TextField(
-                  controller: capacityController,
-                  decoration: const InputDecoration(labelText: 'Počet'),
-                  keyboardType: TextInputType.number,
-                ),
-              ],
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Upravit vybavení'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: 'Název'),
+                  ),
+                  TextField(
+                    controller: capacityController,
+                    decoration: const InputDecoration(labelText: 'Počet'),
+                    keyboardType: TextInputType.number,
+                  ),
+                ],
+              ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Zrušit'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _inventoryItems[index]['name'] = nameController.text;
-                  _inventoryItems[index]['capacity'] =
-                      int.tryParse(capacityController.text) ?? 0;
-                });
-                Navigator.of(context).pop();
-              },
-              child: const Text('Upravit'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Zrušit'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _inventoryItems[index]['name'] = nameController.text;
+                    _inventoryItems[index]['capacity'] =
+                        int.tryParse(capacityController.text) ?? 0;
+                  });
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Upravit'),
+              ),
+            ],
+          );
+        },
+      );
+    }
 
-void showDeleteConfirmationItemDialog(BuildContext context, int index) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Potvrďte odstranění'),
-          content:
-              const Text('Jste si jistý, že chcete odstranit toto vybavení?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: const Text('Ne'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _inventoryItems.removeAt(index); // Remove the item
-                });
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: const Text('Ano'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+    void showDeleteConfirmationItemDialog(BuildContext context, int index) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Potvrďte odstranění'),
+            content:
+                const Text('Jste si jistý, že chcete odstranit toto vybavení?'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                },
+                child: const Text('Ne'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _inventoryItems.removeAt(index); // Remove the item
+                  });
+                  Navigator.of(context).pop(); // Close the dialog
+                },
+                child: const Text('Ano'),
+              ),
+            ],
+          );
+        },
+      );
+    }
 
     // Function to update the capacity
     void updateCapacity(int index, int change) {
@@ -783,99 +794,100 @@ void showDeleteConfirmationItemDialog(BuildContext context, int index) {
               ),
               const SizedBox(height: 16),
               Expanded(
-                child: _inventoryItems.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'Inventář je prázdný.',
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
-                          textAlign: TextAlign.center,
-                        ),
-                      )
-                    : GridView.builder(
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3, // 3 items per row
-                          crossAxisSpacing: 10.0,
-                          mainAxisSpacing: 10.0,
-                          childAspectRatio:
-                              0.6, // Adjust for item height and width
-                        ),
-                        itemCount: _inventoryItems.length,
-                        itemBuilder: (context, index) {
-                          return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                // Image placeholder or selected image
-                                Container(
-                                  width: double.infinity,
-                                  height: 200, // Increased height for the image
-                                  decoration: BoxDecoration(
-                                    image: DecorationImage(
-                                      image: _inventoryItems[index]['image'] !=
-                                              null
-                                          ? FileImage(_inventoryItems[index]
-                                              ['image']) as ImageProvider
-                                          : const AssetImage(
-                                              'assets/images/placeholder.png'),
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
-
-                                const SizedBox(height: 8),
-                                Text(
-                                  _inventoryItems[index]['name'],
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 8),
-                                // Center "Počet" and icons below it
-                                Column(
+                  child: _inventoryItems.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'Inventář je prázdný.',
+                            style: TextStyle(fontSize: 18, color: Colors.grey),
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      : Wrap(
+                          spacing: 10.0, // Horizontal space between cards
+                          runSpacing: 10.0, // Vertical space between cards
+                          children:
+                              List.generate(_inventoryItems.length, (index) {
+                            return SizedBox(
+                              width: 160, // Specify the width of the card
+                              height: 240, // Specify the height of the card
+                              child: Card(
+                                margin: const EdgeInsets.symmetric(vertical: 8),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
+                                    // Image placeholder or selected image
+                                    Container(
+                                      width: double.infinity,
+                                      height:
+                                          120, // You can also adjust this to make the image smaller
+                                      decoration: BoxDecoration(
+                                        image: DecorationImage(
+                                          image: _inventoryItems[index]
+                                                      ['image'] !=
+                                                  null
+                                              ? FileImage(_inventoryItems[index]
+                                                  ['image']) as ImageProvider
+                                              : const AssetImage(
+                                                  'assets/images/placeholder.png'),
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
                                     Text(
-                                        'Počet: ${_inventoryItems[index]['capacity']} ks',
-                                        textAlign: TextAlign.center),
+                                      _inventoryItems[index]['name'],
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    // Center "Počet" and icons below it
+                                    Column(
+                                      children: [
+                                        Text(
+                                          'Počet: ${_inventoryItems[index]['capacity']} ks',
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                    // Icons row (Edit, Delete)
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.add),
+                                          onPressed: () {
+                                            updateCapacity(index, 1);
+                                          },
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.remove),
+                                          onPressed: () {
+                                            updateCapacity(index, -1);
+                                          },
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.edit),
+                                          onPressed: () {
+                                            showEditItemDialog(context, index);
+                                          },
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete),
+                                          onPressed: () {
+                                            showDeleteConfirmation(
+                                                context, index);
+                                          },
+                                        ),
+                                      ],
+                                    ),
                                   ],
                                 ),
-                                // Icons row (Edit, Delete)
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.add),
-                                      onPressed: () {
-                                        updateCapacity(index, 1);
-                                      },
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.remove),
-                                      onPressed: () {
-                                        updateCapacity(index, -1);
-                                      },
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.edit),
-                                      onPressed: () {
-                                        showEditItemDialog(context, index);
-                                      },
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete),
-                                      onPressed: () {
-                                        showDeleteConfirmation(context, index);
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-              ),
+                              ),
+                            );
+                          }),
+                        )),
             ],
           ),
           Positioned(
