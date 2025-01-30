@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(const MyApp());
@@ -612,6 +613,7 @@ return Scaffold(
                   controller: capacityController,
                   decoration: const InputDecoration(labelText: 'Počet'),
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 ),
               ],
             ),
