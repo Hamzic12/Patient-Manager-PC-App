@@ -630,7 +630,7 @@ return Scaffold(
                   setState(() {
                     _inventoryItems.add({
                       'name': name,
-                      'capacity': capacity,
+                      'capacity': int.tryParse(capacity?? '0') ?? 0,
                       'image': null, // Placeholder image for now
                     });
                   });
