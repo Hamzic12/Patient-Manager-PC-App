@@ -790,51 +790,40 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
     }
 
     Widget buildMeetingsList() {
-      List<Map<String, dynamic>> meetingsForSelectedDay =
-          getMeetingsForDay(selectedDay);
+  List<Map<String, dynamic>> meetingsForSelectedDay =
+      getMeetingsForDay(selectedDay);
 
-      if (meetingsForSelectedDay.isEmpty) {
-        return const Center(child: Text("No meetings on this day."));
-      }
+  if (meetingsForSelectedDay.isEmpty) {
+    return const Center(child: Text("No meetings on this day."));
+  }
 
-      return ListView.builder(
-        itemCount: meetingsForSelectedDay.length,
-        itemBuilder: (context, index) {
-          final meeting = meetingsForSelectedDay[index];
+  return ListView.builder(
+    itemCount: meetingsForSelectedDay.length,
+    itemBuilder: (context, index) {
+      final meeting = meetingsForSelectedDay[index];
+      final startTime = meeting["datetime"];
+      final endTime = startTime.add(const Duration(minutes: 30)); // Add 30 minutes to the start time
 
-          return Card(
-            color: Colors.blue.shade100, // Background color for card
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            child: ListTile(
-              title: Text(meeting["name"],
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text(DateFormat("HH:mm").format(meeting["datetime"])),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  /// **Edit Button**
-                  IconButton(
-                    icon: const Icon(Icons.edit, color: Colors.black54),
-                    onPressed: () => editMeeting(index),
-                  ),
+      // Format times for display
+      String startTimeFormatted = DateFormat("HH:mm").format(startTime);
+      String endTimeFormatted = DateFormat("HH:mm").format(endTime);
 
-                  /// **Delete Button**
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () {
-                      setState(() {
-                        _meetings.removeAt(index);
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+      return ListTile(
+        title: Text(meeting["name"]),
+        subtitle: Text("$startTimeFormatted - $endTimeFormatted"), // Display time range
+        trailing: IconButton(
+          icon: const Icon(Icons.delete),
+          onPressed: () {
+            setState(() {
+              _meetings.remove(meeting);
+            });
+          },
+        ),
       );
-    }
+    },
+  );
+}
+
 
     return Scaffold(
       appBar: AppBar(title: const Text("Schůzky")),
