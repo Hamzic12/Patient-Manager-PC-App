@@ -76,6 +76,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
   final List<Map<String, String>> _patientsInfo = [];
   final List<Map<String, dynamic>> _inventoryItems = [];
   final List<Map<String, dynamic>> _meetings = [];
+  DateTime _selectedDay = DateTime.now();
 
   // Method to determine whether the primaryColor is light or dark
   Color getTextColor(BuildContext context) {
@@ -452,22 +453,48 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
   }
 
   Widget _buildSchuzkyPage() {
+    
     Future<String?> selectPatient() async {
-      return await showDialog<String>(
-        context: context,
-        builder: (context) {
+  TextEditingController searchController = TextEditingController();
+  List<Map<String, String>> filteredPatients = List.from(_patientsInfo);
+
+  return await showDialog<String>(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
           return AlertDialog(
-            title: const Text("Select a Patient"),
+            title: Column(
+              children: [
+                const Text("Select a Patient"),
+                TextField(
+                  controller: searchController,
+                  decoration: const InputDecoration(
+                    hintText: "Search patient...",
+                    prefixIcon: Icon(Icons.search),
+                  ),
+                  onChanged: (query) {
+                    setDialogState(() {
+                      filteredPatients = _patientsInfo
+                          .where((patient) => patient["name"]
+                              ?.toLowerCase()
+                              .contains(query.toLowerCase()) ?? false)
+                          .toList();
+                    });
+                  },
+                ),
+              ],
+            ),
             content: SizedBox(
               width: double.maxFinite,
               child: ListView.builder(
                 shrinkWrap: true,
-                itemCount: _patientsInfo.length,
+                itemCount: filteredPatients.length,
                 itemBuilder: (context, index) {
                   return ListTile(
-                    title: Text(_patientsInfo[index]["name"] ?? "Unknown"),
+                    title: Text(filteredPatients[index]["name"] ?? "Unknown"),
                     onTap: () {
-                      Navigator.of(context).pop(_patientsInfo[index]["name"]);
+                      Navigator.of(context).pop(filteredPatients[index]["name"]);
                     },
                   );
                 },
@@ -482,7 +509,10 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
           );
         },
       );
-    }
+    },
+  );
+}
+
 
     Future<DateTime?> selectDateTime() async {
       DateTime now = DateTime.now();
@@ -533,7 +563,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
 
     Widget buildMeetingsList() {
       List<Map<String, dynamic>> meetingsForSelectedDay =
-          getMeetingsForDay(selectedDay);
+          getMeetingsForDay(_selectedDay);
 
       if (meetingsForSelectedDay.isEmpty) {
         return const Center(child: Text("No meetings on this day."));
@@ -566,7 +596,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
           TableCalendar(
             firstDay: DateTime.utc(2020, 1, 1),
             lastDay: DateTime.utc(2030, 12, 31),
-            focusedDay: DateTime.now(),
+            focusedDay: _selectedDay,
             calendarFormat: CalendarFormat.week, // Show week view
             eventLoader: (day) => getMeetingsForDay(day),
             headerStyle: const HeaderStyle(formatButtonVisible: false),
@@ -581,11 +611,11 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
               ),
             ),
             selectedDayPredicate: (day) {
-              return isSameDay(selectedDay, day);
+              return isSameDay(_selectedDay, day);
             },
-            onDaySelected: (selectedDay, focusedDay) {
+            onDaySelected: (newSelectedDay, focusedDay) {
               setState(() {
-                selectedDay = selectedDay;
+                _selectedDay = newSelectedDay; // Correctly update selectedDay
               });
             },
           ),
@@ -641,17 +671,6 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                     },
                     child: const Text('Vyber obrázek'),
                   ),
-                  const SizedBox(height: 10),
-                  // Display text below the button
-                  Text(
-                    pickedImage == null
-                        ? 'Obrázek nevybrán'
-                        : pickedImage!.name,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: pickedImage == null ? Colors.red : Colors.black,
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -693,7 +712,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
           TextEditingController(text: _inventoryItems[index]['name']);
       final capacityController = TextEditingController(
           text: _inventoryItems[index]['capacity'].toString());
-      XFile? pickedImage = null;
+      XFile? pickedImage;
 
       // If there is already an image, use it for editing
       if (_inventoryItems[index]['image'] != null) {
@@ -731,17 +750,6 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                       }
                     },
                     child: const Text('Vyber obrázek'),
-                  ),
-                  const SizedBox(height: 10),
-                  // Display text below the button
-                  Text(
-                    pickedImage == null
-                        ? 'Obrázek nevybrán'
-                        : pickedImage!.name,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: pickedImage == null ? Colors.red : Colors.black,
-                    ),
                   ),
                 ],
               ),
