@@ -453,66 +453,91 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
   }
 
   Widget _buildSchuzkyPage() {
-    
     Future<String?> selectPatient() async {
-  TextEditingController searchController = TextEditingController();
-  List<Map<String, String>> filteredPatients = List.from(_patientsInfo);
+      TextEditingController searchController = TextEditingController();
+      String searchQuery = "";
 
-  return await showDialog<String>(
-    context: context,
-    builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            title: Column(
-              children: [
-                const Text("Select a Patient"),
-                TextField(
-                  controller: searchController,
-                  decoration: const InputDecoration(
-                    hintText: "Search patient...",
-                    prefixIcon: Icon(Icons.search),
-                  ),
-                  onChanged: (query) {
-                    setDialogState(() {
-                      filteredPatients = _patientsInfo
-                          .where((patient) => patient["name"]
-                              ?.toLowerCase()
-                              .contains(query.toLowerCase()) ?? false)
-                          .toList();
-                    });
-                  },
+      return await showDialog<String>(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              /// **Filter patients based on search**
+              List<Map<String, String>> filteredPatients = _patientsInfo
+                  .where((patient) => patient["name"]!
+                      .toLowerCase()
+                      .contains(searchQuery.toLowerCase()))
+                  .toList();
+
+              return AlertDialog(
+                title: const Text("Select a Patient"),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    /// **Search Bar**
+                    TextField(
+                      controller: searchController,
+                      decoration: const InputDecoration(
+                        hintText: "Search patient...",
+                        prefixIcon: Icon(Icons.search),
+                      ),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          searchQuery = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 8),
+
+                    /// **Patients List (Wrap with Cards)**
+                    SingleChildScrollView(
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: filteredPatients.map((patient) {
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.of(context).pop(patient["name"]);
+                            },
+                            child: Card(
+                              color: Colors.blue.shade100, // Background color
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 8, horizontal: 12),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      patient["name"]!,
+                                      style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: filteredPatients.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(filteredPatients[index]["name"] ?? "Unknown"),
-                    onTap: () {
-                      Navigator.of(context).pop(filteredPatients[index]["name"]);
-                    },
-                  );
-                },
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(null),
-                child: const Text("Cancel"),
-              ),
-            ],
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(null),
+                    child: const Text("Cancel"),
+                  ),
+                ],
+              );
+            },
           );
         },
       );
-    },
-  );
-}
-
+    }
 
     Future<DateTime?> selectDateTime() async {
       DateTime now = DateTime.now();
@@ -541,13 +566,82 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
       return null;
     }
 
+    Future<DateTime?> selectDateTimeWithSlots(DateTime initialDate) async {
+      DateTime now = DateTime.now();
+      DateTime? selectedDate = await showDatePicker(
+        context: context,
+        initialDate: initialDate,
+        firstDate: now,
+        lastDate: now.add(const Duration(days: 365)),
+      );
+
+      if (selectedDate != null) {
+        return await showDialog<DateTime>(
+          context: context,
+          builder: (context) {
+            return StatefulBuilder(
+              builder: (context, setDialogState) {
+                /// **Generate available 30-minute slots**
+                List<DateTime> availableSlots = [];
+                DateTime startTime = DateTime(selectedDate.year,
+                    selectedDate.month, selectedDate.day, 8, 0);
+                DateTime endTime = DateTime(selectedDate.year,
+                    selectedDate.month, selectedDate.day, 18, 0);
+
+                while (startTime.isBefore(endTime)) {
+                  /// **Check if slot is already booked**
+                  bool isTaken = _meetings.any((meeting) =>
+                      isSameDay(meeting["datetime"], startTime) &&
+                      meeting["datetime"].hour == startTime.hour &&
+                      meeting["datetime"].minute == startTime.minute);
+
+                  if (!isTaken) {
+                    availableSlots.add(startTime);
+                  }
+
+                  startTime = startTime.add(const Duration(minutes: 30));
+                }
+
+                return AlertDialog(
+                  title: const Text("Select Time"),
+                  content: availableSlots.isEmpty
+                      ? const Text("No available time slots.")
+                      : Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: availableSlots.map((slot) {
+                            return ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(context, slot);
+                              },
+                              child: Text(DateFormat("HH:mm").format(slot)),
+                            );
+                          }).toList(),
+                        ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("Cancel"),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      }
+      return null;
+    }
+
     Future<void> scheduleMeeting() async {
       String? selectedPatient = await selectPatient();
       if (selectedPatient != null) {
-        DateTime? selectedDate = await selectDateTime();
-        if (selectedDate != null) {
+        DateTime now = DateTime.now();
+        DateTime? selectedDateTime = await selectDateTimeWithSlots(now);
+        if (selectedDateTime != null) {
           setState(() {
-            _meetings.add({"name": selectedPatient, "datetime": selectedDate});
+            _meetings
+                .add({"name": selectedPatient, "datetime": selectedDateTime});
           });
         }
       }
@@ -561,9 +655,143 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
           .toList();
     }
 
+    Future<void> editMeeting(int index) async {
+      Map<String, dynamic> meeting = _meetings[index];
+      String? selectedPatient = meeting["name"];
+      DateTime selectedDateTime = meeting["datetime"];
+
+      TextEditingController searchController = TextEditingController();
+      String searchQuery = "";
+
+      await showDialog(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              /// **Filter patients based on search**
+              List<Map<String, String>> filteredPatients = _patientsInfo
+                  .where((patient) => patient["name"]!
+                      .toLowerCase()
+                      .contains(searchQuery.toLowerCase()))
+                  .toList();
+
+              return AlertDialog(
+                title: const Text("Edit Meeting"),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    /// **Search Bar**
+                    TextField(
+                      controller: searchController,
+                      decoration: const InputDecoration(
+                        hintText: "Search patient...",
+                        prefixIcon: Icon(Icons.search),
+                      ),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          searchQuery = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 8),
+
+                    /// **Patients List (Wrap with Cards)**
+                    SingleChildScrollView(
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: filteredPatients.map((patient) {
+                          return GestureDetector(
+                            onTap: () {
+                              setDialogState(() {
+                                selectedPatient = patient["name"];
+                              });
+                            },
+                            child: Card(
+                              color: selectedPatient == patient["name"]
+                                  ? Colors.blue.shade300
+                                  : Colors.blue.shade100,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 8, horizontal: 12),
+                                child: Text(
+                                  patient["name"]!,
+                                  style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    /// **Pick Date & Time (Same as in `scheduleMeeting()`)**
+                    ElevatedButton(
+                      onPressed: () async {
+                        DateTime? newDateTime =
+                            await selectDateTimeWithSlots(selectedDateTime);
+                        if (newDateTime != null) {
+                          setDialogState(() {
+                            selectedDateTime = newDateTime;
+                          });
+                        }
+                      },
+                      child: Text(
+                          "Change Time: ${DateFormat("yyyy-MM-dd HH:mm").format(selectedDateTime)}"),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("Cancel"),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      /// **Prevent double booking**
+                      bool isTimeTaken = _meetings.any((m) =>
+                          isSameDay(m["datetime"], selectedDateTime) &&
+                          m["datetime"].hour == selectedDateTime.hour &&
+                          m["datetime"].minute == selectedDateTime.minute &&
+                          m != meeting); // Exclude the current meeting
+
+                      if (isTimeTaken) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content:
+                                    Text("This time slot is already taken!")));
+                        return;
+                      }
+
+                      /// **Save Changes**
+                      setState(() {
+                        _meetings[index] = {
+                          "name": selectedPatient,
+                          "datetime": selectedDateTime
+                        };
+                      });
+
+                      Navigator.pop(context);
+                    },
+                    child: const Text("Save"),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    }
+
     Widget buildMeetingsList() {
       List<Map<String, dynamic>> meetingsForSelectedDay =
-          getMeetingsForDay(_selectedDay);
+          getMeetingsForDay(selectedDay);
 
       if (meetingsForSelectedDay.isEmpty) {
         return const Center(child: Text("No meetings on this day."));
@@ -573,16 +801,35 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
         itemCount: meetingsForSelectedDay.length,
         itemBuilder: (context, index) {
           final meeting = meetingsForSelectedDay[index];
-          return ListTile(
-            title: Text(meeting["name"]),
-            subtitle: Text(DateFormat("HH:mm").format(meeting["datetime"])),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () {
-                setState(() {
-                  _meetings.remove(meeting);
-                });
-              },
+
+          return Card(
+            color: Colors.blue.shade100, // Background color for card
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            child: ListTile(
+              title: Text(meeting["name"],
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text(DateFormat("HH:mm").format(meeting["datetime"])),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  /// **Edit Button**
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: Colors.black54),
+                    onPressed: () => editMeeting(index),
+                  ),
+
+                  /// **Delete Button**
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () {
+                      setState(() {
+                        _meetings.removeAt(index);
+                      });
+                    },
+                  ),
+                ],
+              ),
             ),
           );
         },
