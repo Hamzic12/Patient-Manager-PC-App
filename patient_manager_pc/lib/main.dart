@@ -122,9 +122,12 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
             TextButton(
               onPressed: () {
                 if (username.isNotEmpty && password.isNotEmpty) {
+                  // Format the current date/time in dd-MM-yy hh:mm format
+                  String formattedLoginTime = DateFormat('dd-MM-yyyy HH:mm')
+                      .format(DateTime.now().toLocal());
                   setState(() {
                     _loginName = username;
-                    _loginTime = DateTime.now().toLocal().toString();
+                    _loginTime = formattedLoginTime;
                   });
                   Navigator.of(context).pop(); // Close the dialog
                 } else {
@@ -135,6 +138,36 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                 }
               },
               child: const Text("Login"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Odhlášení"),
+          content: const Text("Chcete se odhlásit?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Just close the dialog
+              },
+              child: const Text("Ne"),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _loginName = null;
+                  _loginTime = null;
+                });
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text("Ano"),
             ),
           ],
         );
@@ -157,9 +190,14 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.login),
-            onPressed: _showLoginDialog, // Show the login dialog when clicked
-          ),
+              icon: Icon(_loginName != null ? Icons.logout : Icons.login),
+              onPressed: () {
+                if (_loginName != null) {
+                  _showLogoutDialog();
+                } else {
+                  _showLoginDialog();
+                }
+              }),
         ],
       ),
       body: Row(
@@ -219,34 +257,9 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
   }
 
   Widget _getPageContent() {
-    if (_selectedPage == 'Domů') {
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (_loginName != null && _loginTime != null)
-            Column(
-              children: [
-                Text(
-                  'Logged in as: $_loginName',
-                  style: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  'Login time: $_loginTime',
-                  style: const TextStyle(fontSize: 16),
-                ),
-              ],
-            )
-          else
-            const Text(
-              'You are not logged in.',
-              style: TextStyle(fontSize: 18),
-            ),
-        ],
-      );
-    }
-
     switch (_selectedPage) {
+      case 'Domů':
+        return _buildHomePage();
       case 'Pacienti':
         return _buildPacientiPage();
       case 'Schůzky':
@@ -259,6 +272,85 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
           style: const TextStyle(fontSize: 24),
         );
     }
+  }
+
+// Home page displaying app info and login details if available.
+  Widget _buildHomePage() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            'Welcome to Pacient Manager PC',
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'This application is designed to assist the staff at a urology doctor\'s office. '
+            'Manage patients, schedule meetings, and keep track of your inventory all in one place.',
+            style: TextStyle(fontSize: 18),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          const Divider(),
+          const SizedBox(height: 24),
+          // Display login information if available
+          if (_loginName != null && _loginTime != null)
+            Column(
+              children: [
+                Text(
+                  'Logged in as: $_loginName',
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Login time: $_loginTime',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 24),
+              ],
+            )
+          else
+            const Text(
+              'You are not logged in.',
+              style: TextStyle(fontSize: 18),
+            ),
+          const Divider(),
+          const SizedBox(height: 24),
+          // List app features
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Features:',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildFeatureItem(Icons.login, 'User Login'),
+          _buildFeatureItem(Icons.logout, 'User Logout'),
+          _buildFeatureItem(Icons.people, 'Add and Manage Patients'),
+          _buildFeatureItem(Icons.schedule, 'Schedule Meetings'),
+          _buildFeatureItem(Icons.inventory, 'Manage Inventory'),
+        ],
+      ),
+    );
+  }
+
+  // Helper widget to display a feature with an icon and text.
+  Widget _buildFeatureItem(IconData icon, String feature) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          Icon(icon, color: Theme.of(context).primaryColor),
+          const SizedBox(width: 8),
+          Text(feature, style: const TextStyle(fontSize: 18)),
+        ],
+      ),
+    );
   }
 
   Widget _buildPacientiPage() {
@@ -453,6 +545,11 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
   }
 
   Widget _buildSchuzkyPage() {
+    // Helper function to check if two dates are on the same day.
+    bool isSameDay(DateTime a, DateTime b) {
+      return a.year == b.year && a.month == b.month && a.day == b.day;
+    }
+
     Future<String?> selectPatient() async {
       TextEditingController searchController = TextEditingController();
       String searchQuery = "";
@@ -462,7 +559,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
         builder: (context) {
           return StatefulBuilder(
             builder: (context, setDialogState) {
-              /// **Filter patients based on search**
+              // Filtrovat pacienty podle dotazu
               List<Map<String, String>> filteredPatients = _patientsInfo
                   .where((patient) => patient["name"]!
                       .toLowerCase()
@@ -470,15 +567,15 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                   .toList();
 
               return AlertDialog(
-                title: const Text("Select a Patient"),
+                title: const Text("Vyberte pacienta"),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    /// **Search Bar**
+                    // Vyhledávací pole
                     TextField(
                       controller: searchController,
                       decoration: const InputDecoration(
-                        hintText: "Search patient...",
+                        hintText: "Hledat pacienta...",
                         prefixIcon: Icon(Icons.search),
                       ),
                       onChanged: (value) {
@@ -488,8 +585,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                       },
                     ),
                     const SizedBox(height: 8),
-
-                    /// **Patients List (Wrap with Cards)**
+                    // Seznam pacientů zabalený v kartách
                     SingleChildScrollView(
                       child: Wrap(
                         spacing: 8,
@@ -500,7 +596,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                               Navigator.of(context).pop(patient["name"]);
                             },
                             child: Card(
-                              color: Colors.blue.shade100, // Background color
+                              color: Colors.blue.shade100,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -529,7 +625,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(null),
-                    child: const Text("Cancel"),
+                    child: const Text("Zrušit"),
                   ),
                 ],
               );
@@ -581,7 +677,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
           builder: (context) {
             return StatefulBuilder(
               builder: (context, setDialogState) {
-                /// **Generate available 30-minute slots**
+                // Vygenerovat dostupné 30minutové termíny
                 List<DateTime> availableSlots = [];
                 DateTime startTime = DateTime(selectedDate.year,
                     selectedDate.month, selectedDate.day, 8, 0);
@@ -589,7 +685,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                     selectedDate.month, selectedDate.day, 18, 0);
 
                 while (startTime.isBefore(endTime)) {
-                  /// **Check if slot is already booked**
+                  // Kontrola, zda je termín již rezervován
                   bool isTaken = _meetings.any((meeting) =>
                       isSameDay(meeting["datetime"], startTime) &&
                       meeting["datetime"].hour == startTime.hour &&
@@ -603,9 +699,9 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                 }
 
                 return AlertDialog(
-                  title: const Text("Select Time"),
+                  title: const Text("Vyberte čas"),
                   content: availableSlots.isEmpty
-                      ? const Text("No available time slots.")
+                      ? const Text("Žádné dostupné termíny.")
                       : Wrap(
                           spacing: 8,
                           runSpacing: 8,
@@ -621,7 +717,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text("Cancel"),
+                      child: const Text("Zrušit"),
                     ),
                   ],
                 );
@@ -642,6 +738,12 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
           setState(() {
             _meetings
                 .add({"name": selectedPatient, "datetime": selectedDateTime});
+            // Update _selectedDay so that the meeting becomes visible in the calendar
+            _selectedDay = DateTime(
+              selectedDateTime.year,
+              selectedDateTime.month,
+              selectedDateTime.day,
+            );
           });
         }
       }
@@ -668,7 +770,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
         builder: (context) {
           return StatefulBuilder(
             builder: (context, setDialogState) {
-              /// **Filter patients based on search**
+              // Filtrovat pacienty podle dotazu
               List<Map<String, String>> filteredPatients = _patientsInfo
                   .where((patient) => patient["name"]!
                       .toLowerCase()
@@ -676,15 +778,15 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                   .toList();
 
               return AlertDialog(
-                title: const Text("Edit Meeting"),
+                title: const Text("Upravit schůzku"),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    /// **Search Bar**
+                    // Vyhledávací pole
                     TextField(
                       controller: searchController,
                       decoration: const InputDecoration(
-                        hintText: "Search patient...",
+                        hintText: "Hledat pacienta...",
                         prefixIcon: Icon(Icons.search),
                       ),
                       onChanged: (value) {
@@ -694,8 +796,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                       },
                     ),
                     const SizedBox(height: 8),
-
-                    /// **Patients List (Wrap with Cards)**
+                    // Seznam pacientů zabalený v kartách
                     SingleChildScrollView(
                       child: Wrap(
                         spacing: 8,
@@ -728,10 +829,8 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                         }).toList(),
                       ),
                     ),
-
                     const SizedBox(height: 10),
-
-                    /// **Pick Date & Time (Same as in `scheduleMeeting()`)**
+                    // Vybrat datum a čas (stejné jako ve scheduleMeeting())
                     ElevatedButton(
                       onPressed: () async {
                         DateTime? newDateTime =
@@ -743,33 +842,32 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                         }
                       },
                       child: Text(
-                          "Change Time: ${DateFormat("yyyy-MM-dd HH:mm").format(selectedDateTime)}"),
+                          "Změnit čas: ${DateFormat("dd-MM-yyyy HH:mm").format(selectedDateTime)}"),
                     ),
                   ],
                 ),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text("Cancel"),
+                    child: const Text("Zrušit"),
                   ),
                   TextButton(
                     onPressed: () {
-                      /// **Prevent double booking**
+                      // Kontrola dvojí rezervace
                       bool isTimeTaken = _meetings.any((m) =>
                           isSameDay(m["datetime"], selectedDateTime) &&
                           m["datetime"].hour == selectedDateTime.hour &&
                           m["datetime"].minute == selectedDateTime.minute &&
-                          m != meeting); // Exclude the current meeting
+                          m != meeting); // Vyloučit aktuální schůzku
 
                       if (isTimeTaken) {
                         ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                                content:
-                                    Text("This time slot is already taken!")));
+                                content: Text("Tento termín je již obsazen!")));
                         return;
                       }
 
-                      /// **Save Changes**
+                      // Uložit změny
                       setState(() {
                         _meetings[index] = {
                           "name": selectedPatient,
@@ -779,7 +877,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
 
                       Navigator.pop(context);
                     },
-                    child: const Text("Save"),
+                    child: const Text("Uložit"),
                   ),
                 ],
               );
@@ -790,50 +888,102 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
     }
 
     Widget buildMeetingsList() {
-  List<Map<String, dynamic>> meetingsForSelectedDay =
-      getMeetingsForDay(selectedDay);
+      List<Map<String, dynamic>> meetingsForSelectedDay =
+          getMeetingsForDay(_selectedDay);
 
-  if (meetingsForSelectedDay.isEmpty) {
-    return const Center(child: Text("No meetings on this day."));
-  }
+      if (meetingsForSelectedDay.isEmpty) {
+        return const Center(child: Text("V tento den nejsou žádné schůzky."));
+      }
 
-  return ListView.builder(
-    itemCount: meetingsForSelectedDay.length,
-    itemBuilder: (context, index) {
-      final meeting = meetingsForSelectedDay[index];
-      final startTime = meeting["datetime"];
-      final endTime = startTime.add(const Duration(minutes: 30)); // Add 30 minutes to the start time
+      // Sort meetings by start time
+      meetingsForSelectedDay
+          .sort((a, b) => a["datetime"].compareTo(b["datetime"]));
 
-      // Format times for display
-      String startTimeFormatted = DateFormat("HH:mm").format(startTime);
-      String endTimeFormatted = DateFormat("HH:mm").format(endTime);
+      return Expanded(
+        child: SingleChildScrollView(
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.center,
+            children: meetingsForSelectedDay.map((meeting) {
+              final startTime = meeting["datetime"];
+              final endTime = startTime.add(const Duration(minutes: 30));
 
-      return ListTile(
-        title: Text(meeting["name"]),
-        subtitle: Text("$startTimeFormatted - $endTimeFormatted"), // Display time range
-        trailing: IconButton(
-          icon: const Icon(Icons.delete),
-          onPressed: () {
-            setState(() {
-              _meetings.remove(meeting);
-            });
-          },
+              String startTimeFormatted = DateFormat("HH:mm").format(startTime);
+              String endTimeFormatted = DateFormat("HH:mm").format(endTime);
+
+              return SizedBox(
+                width: MediaQuery.of(context).size.width / 3 - 16,
+                child: Card(
+                  color: Colors.blue.shade100,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          meeting["name"],
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Text("$startTimeFormatted - $endTimeFormatted"),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit, size: 20),
+                              onPressed: () async {
+                                int originalIndex = _meetings.indexWhere(
+                                  (m) => m["datetime"] == meeting["datetime"],
+                                );
+
+                                if (originalIndex != -1) {
+                                  await editMeeting(originalIndex);
+                                }
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, size: 20),
+                              onPressed: () {
+                                setState(() {
+                                  _meetings.removeWhere((m) =>
+                                      m["datetime"] == meeting["datetime"]);
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
         ),
       );
-    },
-  );
-}
-
+    }
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Schůzky")),
+      appBar: AppBar(
+        title: const Center(
+          child: Text(
+            'Schůzky',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
       body: Column(
         children: [
           TableCalendar(
             firstDay: DateTime.utc(2020, 1, 1),
             lastDay: DateTime.utc(2030, 12, 31),
             focusedDay: _selectedDay,
-            calendarFormat: CalendarFormat.week, // Show week view
+            calendarFormat: CalendarFormat.week, // Zobrazit týdenní pohled
             eventLoader: (day) => getMeetingsForDay(day),
             headerStyle: const HeaderStyle(formatButtonVisible: false),
             calendarStyle: const CalendarStyle(
@@ -851,7 +1001,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
             },
             onDaySelected: (newSelectedDay, focusedDay) {
               setState(() {
-                _selectedDay = newSelectedDay; // Correctly update selectedDay
+                _selectedDay = newSelectedDay;
               });
             },
           ),
