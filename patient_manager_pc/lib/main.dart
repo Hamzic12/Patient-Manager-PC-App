@@ -1008,9 +1008,15 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
           Expanded(child: buildMeetingsList()),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: scheduleMeeting,
-        child: const Icon(Icons.add),
+      floatingActionButton: Positioned(
+        bottom: 16,
+        right: 16,
+        child: FloatingActionButton(
+          onPressed: scheduleMeeting, // or your own function to open dialog
+          backgroundColor:
+              Theme.of(context).primaryColor, // Dynamically set color
+          child: const Icon(Icons.add, color: Colors.white),
+        ),
       ),
     );
   }
@@ -1346,16 +1352,15 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                         )),
             ],
           ),
-          Positioned(
-            bottom: 16,
-            right: 16,
-            child: FloatingActionButton(
-              onPressed: () => showAddItemDialog(context),
-              backgroundColor:
-                  Theme.of(context).primaryColor, // Dynamically set color
-              child: const Icon(Icons.add, color: Colors.white),
-            ),
-          ),
+         Positioned(
+        bottom: 16,
+        right: 16,
+        child: FloatingActionButton(
+          onPressed: () => showAddItemDialog(context),
+          backgroundColor: Theme.of(context).primaryColor, // Dynamically set color
+          child: const Icon(Icons.add, color: Colors.white),
+        ),
+      ),
         ],
       ),
     );
