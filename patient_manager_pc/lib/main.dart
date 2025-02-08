@@ -78,6 +78,8 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
   final List<Map<String, dynamic>> _meetings = [];
   DateTime _selectedDay = DateTime.now();
 
+  final _formKey = GlobalKey<FormState>();
+
   // Method to determine whether the primaryColor is light or dark
   Color getTextColor(BuildContext context) {
     final primaryColor = Theme.of(context).primaryColor;
@@ -93,18 +95,19 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text("Login"),
+          title: const Text("Přihlášení"),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                decoration: const InputDecoration(labelText: "Username"),
+                decoration:
+                    const InputDecoration(labelText: "Uživatelské jméno"),
                 onChanged: (value) {
                   username = value;
                 },
               ),
               TextField(
-                decoration: const InputDecoration(labelText: "Password"),
+                decoration: const InputDecoration(labelText: "Heslo"),
                 obscureText: true,
                 onChanged: (value) {
                   password = value;
@@ -117,7 +120,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
               onPressed: () {
                 Navigator.of(context).pop(); // Close the dialog
               },
-              child: const Text("Cancel"),
+              child: const Text("Zrušit"),
             ),
             TextButton(
               onPressed: () {
@@ -133,11 +136,12 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                        content: Text("Please enter valid credentials")),
+                        content:
+                            Text("Prosím zadejte správné přihlašovací údaje")),
                   );
                 }
               },
-              child: const Text("Login"),
+              child: const Text("Přihlášení"),
             ),
           ],
         );
@@ -180,7 +184,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Pacient Manager PC',
+          'UroTep',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: getTextColor(context),
@@ -282,14 +286,14 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Text(
-            'Welcome to Pacient Manager PC',
+            'Vítejte v aplikaci UroTep',
             style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
           const Text(
-            'This application is designed to assist the staff at a urology doctor\'s office. '
-            'Manage patients, schedule meetings, and keep track of your inventory all in one place.',
+            'Tato aplikace je určena pro personál urologické ordinace. '
+            'Správa pacientů, plánování schůzek a správa o inventáři - vše na jednom místě.',
             style: TextStyle(fontSize: 18),
             textAlign: TextAlign.center,
           ),
@@ -301,13 +305,13 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
             Column(
               children: [
                 Text(
-                  'Logged in as: $_loginName',
+                  'Příhlášený jako: $_loginName',
                   style: const TextStyle(
                       fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Login time: $_loginTime',
+                  'Čas přihlášení: $_loginTime',
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 24),
@@ -315,7 +319,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
             )
           else
             const Text(
-              'You are not logged in.',
+              'Nejste přihlášeni, prosím, přihlaste se.',
               style: TextStyle(fontSize: 18),
             ),
           const Divider(),
@@ -324,16 +328,17 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
           const Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              'Features:',
+              'Vlastnosti aplikace:',
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(height: 8),
-          _buildFeatureItem(Icons.login, 'User Login'),
-          _buildFeatureItem(Icons.logout, 'User Logout'),
-          _buildFeatureItem(Icons.people, 'Add and Manage Patients'),
-          _buildFeatureItem(Icons.schedule, 'Schedule Meetings'),
-          _buildFeatureItem(Icons.inventory, 'Manage Inventory'),
+          _buildFeatureItem(Icons.login, 'Přihlášení uživatele'),
+          _buildFeatureItem(Icons.logout, 'Odhlášení uživatele'),
+          _buildFeatureItem(Icons.people,
+              'Přidávání a Správa pacientů, Zobrazení schůzek pacienta'),
+          _buildFeatureItem(Icons.schedule, 'Zadávání a zobrazení schůzek'),
+          _buildFeatureItem(Icons.inventory, 'Správa inventáře'),
         ],
       ),
     );
@@ -366,60 +371,113 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
         phoneController.text = _patientsInfo[index]['phone'] ?? '';
       }
 
+      void savePatient(int index) {
+        final newPatient = {
+          'name': nameController.text.trim(),
+          'email': emailController.text.trim(),
+          'phone': phoneController.text.trim(),
+        };
+
+        setState(() {
+          if (index == -1) {
+            // Add new patient
+            _patientsInfo.add(newPatient);
+          } else {
+            // Update existing patient
+            _patientsInfo[index] = newPatient;
+          }
+        });
+      }
+
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             title: Text(index == -1 ? 'Přidat pacienta' : 'Upravit pacienta'),
             content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Jméno'),
-                  ),
-                  TextField(
-                    controller: emailController,
-                    decoration: const InputDecoration(labelText: 'E-mail'),
-                  ),
-                  TextField(
-                    controller: phoneController,
-                    decoration:
-                        const InputDecoration(labelText: 'Telefonní číslo'),
-                  ),
-                  const SizedBox(height: 10),
-                ],
+              child: Form(
+                key: _formKey, // Add a GlobalKey for validation
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: nameController,
+                      decoration: const InputDecoration(labelText: 'Jméno'),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Jméno je povinné.';
+                        }
+                        // Split the trimmed value by one or more whitespace characters.
+                        List<String> parts = value.trim().split(RegExp(r'\s+'));
+                        if (parts.length < 2) {
+                          return 'Zadejte prosím celé jméno i příjmení.';
+                        }
+                        return null;
+                      },
+                    ),
+                    TextFormField(
+                      controller: emailController,
+                      decoration: const InputDecoration(labelText: 'E-mail'),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'E-mail je povinný.';
+                        }
+                        final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                        if (!emailRegex.hasMatch(value)) {
+                          return 'Zadejte platný e-mail.';
+                        }
+                        return null;
+                      },
+                    ),
+                    TextFormField(
+                      controller: phoneController,
+                      decoration: InputDecoration(
+                        labelText: 'Telefonní číslo',
+                        // Display a Czech flag icon and "+420" as prefix before the user's input
+                        prefix: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Image.asset(
+                              'assets/images/czech_flag.png', // Czech flag
+                              height: 20,
+                              width: 20,
+                            ),
+                            const SizedBox(width: 4),
+                            const Text('+420 '),
+                          ],
+                        ),
+                      ),
+                      keyboardType: TextInputType.phone,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Telefonní číslo je povinné.';
+                        }
+                        // Validate that the input contains exactly 9 digits
+                        final phoneRegex = RegExp(r'^\d{9}$');
+                        if (!phoneRegex.hasMatch(value.trim())) {
+                          return 'Tel. číslo musí obsahovat přesně 9 číslic.';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
               ),
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => Navigator.pop(context),
                 child: const Text('Zrušit'),
               ),
               ElevatedButton(
                 onPressed: () {
-                  final name = nameController.text;
-                  final email = emailController.text;
-                  final phone = phoneController.text;
-
-                  setState(() {
-                    if (index == -1) {
-                      _patientsInfo.add({
-                        'name': name,
-                        'email': email,
-                        'phone': phone,
-                      });
-                    } else {
-                      _patientsInfo[index] = {
-                        'name': name,
-                        'email': email,
-                        'phone': phone,
-                      };
-                    }
-                  });
-
-                  Navigator.of(context).pop();
+                  if (_formKey.currentState!.validate()) {
+                    // Proceed only if validation passes
+                    savePatient(index);
+                    Navigator.pop(context);
+                  }
                 },
                 child: Text(index == -1 ? 'Přidat' : 'Upravit'),
               ),
@@ -459,6 +517,289 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
       );
     }
 
+    Future<DateTime?> selectDateTimeWithSlots(DateTime initialDate) async {
+      DateTime now = DateTime.now();
+      DateTime? selectedDate = await showDatePicker(
+        context: context,
+        initialDate: initialDate,
+        firstDate: now,
+        lastDate: now.add(const Duration(days: 365)),
+      );
+
+      if (selectedDate != null) {
+        return await showDialog<DateTime>(
+          context: context,
+          builder: (context) {
+            return StatefulBuilder(
+              builder: (context, setDialogState) {
+                // Vygenerovat dostupné 30minutové termíny
+                List<DateTime> availableSlots = [];
+                DateTime startTime = DateTime(selectedDate.year,
+                    selectedDate.month, selectedDate.day, 8, 0);
+                DateTime endTime = DateTime(selectedDate.year,
+                    selectedDate.month, selectedDate.day, 18, 0);
+
+                while (startTime.isBefore(endTime)) {
+                  // Kontrola, zda je termín již rezervován
+                  bool isTaken = _meetings.any((meeting) =>
+                      isSameDay(meeting["datetime"], startTime) &&
+                      meeting["datetime"].hour == startTime.hour &&
+                      meeting["datetime"].minute == startTime.minute);
+
+                  if (!isTaken) {
+                    availableSlots.add(startTime);
+                  }
+
+                  startTime = startTime.add(const Duration(minutes: 30));
+                }
+
+                return AlertDialog(
+                  title: const Text("Vyberte čas"),
+                  content: availableSlots.isEmpty
+                      ? const Text("Žádné dostupné termíny.")
+                      : Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: availableSlots.map((slot) {
+                            return ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(context, slot);
+                              },
+                              child: Text(DateFormat("HH:mm").format(slot)),
+                            );
+                          }).toList(),
+                        ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("Zrušit"),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      }
+      return null;
+    }
+
+  void showPatientMeetingsDialog(String patientName, Function(int) editMeeting) {
+  List<Map<String, dynamic>> patientMeetings = _meetings
+      .where((meeting) => meeting["name"] == patientName)
+      .toList();
+
+  patientMeetings.sort((a, b) => a["datetime"].compareTo(b["datetime"]));
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          // Check if the dialog is still mounted before using setDialogState
+          if (!mounted) return Container();
+
+          return AlertDialog(
+            title: Text("Schůzky pro $patientName"),
+            content: patientMeetings.isEmpty
+                ? const Text("Pacient nemá žádné naplánované schůzky.")
+                : SizedBox(
+                    width: double.maxFinite,
+                    child: Wrap(
+                      spacing: 8.0,
+                      runSpacing: 8.0,
+                      children: patientMeetings.map((meeting) {
+                        DateTime startDateTime = meeting["datetime"];
+                        DateTime endDateTime = startDateTime.add(const Duration(minutes: 30));
+
+                        String formattedStartDate =
+                            DateFormat("dd-MM-yyyy HH:mm").format(startDateTime);
+                        String formattedEndDate =
+                            DateFormat("dd-MM-yyyy HH:mm").format(endDateTime);
+
+                        return Card(
+                          color: Colors.blue[100],
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '$formattedStartDate - $formattedEndDate',
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    // Edit button
+                                    IconButton(
+                                      icon: const Icon(Icons.edit, size: 18),
+                                      onPressed: () async {
+                                        int originalIndex = _meetings.indexWhere(
+                                          (m) =>
+                                              m["datetime"] == meeting["datetime"] &&
+                                              m["name"] == meeting["name"],
+                                        );
+                                        if (originalIndex != -1) {
+                                         
+
+                                          await editMeeting(originalIndex);  // Edit meeting
+
+                                          // Only update the dialog if it's still mounted
+                                          if (mounted) {
+                                            setDialogState(() {
+                                              patientMeetings = _meetings
+                                                  .where((m) => m["name"] == patientName)
+                                                  .toList();
+                                              patientMeetings.sort(
+                                                  (a, b) => a["datetime"].compareTo(b["datetime"]));
+                                            });
+                                          }
+                                        }
+                                      },
+                                    ),
+                                    // Delete button
+                                    IconButton(
+                                      icon: const Icon(Icons.delete, size: 18),
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              title: const Text("Odstranit schůzku"),
+                                              content: const Text(
+                                                  "Opravdu chcete odstranit schůzku?"),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () =>
+                                                      Navigator.of(context).pop(),
+                                                  child: const Text("Ne"),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () {
+                                                    int originalIndex =
+                                                        _meetings.indexWhere(
+                                                      (m) =>
+                                                          m["datetime"] ==
+                                                              meeting["datetime"] &&
+                                                          m["name"] ==
+                                                              meeting["name"],
+                                                    );
+                                                    if (originalIndex != -1) {
+                                                      setState(() {
+                                                        _meetings.removeAt(originalIndex);
+                                                      });
+                                                      setDialogState(() {
+                                                        patientMeetings = _meetings
+                                                            .where((m) =>
+                                                                m["name"] ==
+                                                                patientName)
+                                                            .toList();
+                                                        patientMeetings.sort(
+                                                            (a, b) =>
+                                                                a["datetime"]
+                                                                    .compareTo(
+                                                                        b["datetime"]));
+                                                      });
+                                                    }
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                  child: const Text("Ano"),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Zavřít"),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
+Future<void> editMeeting(int index) async {
+  Map<String, dynamic> meeting = _meetings[index];
+  DateTime selectedDateTime = meeting["datetime"];
+
+  await showDialog(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text("Upravit čas schůzky"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ElevatedButton(
+                  onPressed: () async {
+                    DateTime? newDateTime =
+                        await selectDateTimeWithSlots(selectedDateTime);
+                    if (newDateTime != null) {
+                      setDialogState(() {
+                        selectedDateTime = newDateTime;
+                      });
+                    }
+                  },
+                  child: Text(
+                      "Změnit čas: ${DateFormat("dd-MM-yyyy HH:mm").format(selectedDateTime)}"),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Zrušit"),
+              ),
+              TextButton(
+                onPressed: () {
+                  bool isTimeTaken = _meetings.any((m) =>
+                      isSameDay(m["datetime"], selectedDateTime) &&
+                      m["datetime"].hour == selectedDateTime.hour &&
+                      m["datetime"].minute == selectedDateTime.minute &&
+                      m != meeting);
+                  if (isTimeTaken) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text("Tento termín je již obsazen!")));
+                    return;
+                  }
+
+                  // Save changes
+                  setState(() {
+                    _meetings[index]["datetime"] = selectedDateTime;
+                  });
+
+                  // Close the dialog
+                  Navigator.pop(context);
+                },
+                child: const Text("Uložit"),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
     return Stack(
       children: [
         Padding(
@@ -477,56 +818,76 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
 
               // Expanded area for the patient list or empty state message
               Expanded(
-                child: _patientsInfo.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'Nemáme žádného objednaného pacienta.',
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
-                          textAlign: TextAlign.center,
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount: _patientsInfo.length,
-                        itemBuilder: (context, index) {
-                          return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            child: ListTile(
-                              title: Text(
-                                  _patientsInfo[index]['name'] ?? 'Neuvedeno'),
-                              subtitle: Column(
+                  child: _patientsInfo.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'Nemáme žádného objednaného pacienta.',
+                            style: TextStyle(fontSize: 18, color: Colors.grey),
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      : Wrap(
+                          spacing: 10.0, // Horizontal space between cards
+                          runSpacing: 10.0, // Vertical space between rows
+                          children:
+                              List.generate(_patientsInfo.length, (index) {
+                            return Container(
+                              width: 350, // Smaller card width
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.blue[100], // Background color
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  Text(
+                                    _patientsInfo[index]['name'] ?? 'Neuvedeno',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 4),
                                   Text(
                                       'Email: ${_patientsInfo[index]['email'] ?? 'Neuvedeno'}'),
                                   Text(
                                       'Telefon: ${_patientsInfo[index]['phone'] ?? 'Neuvedeno'}'),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      //Show scheduled meetings of patient
+                                      IconButton(
+                                        icon: const Icon(Icons.event_note),
+                                        onPressed: () =>
+                                            showPatientMeetingsDialog(
+                                                _patientsInfo[index]['name']
+                                                    .toString(),
+                                                editMeeting),
+                                      ),
+
+                                      // Edit Icon
+                                      IconButton(
+                                        icon: const Icon(Icons.edit, size: 18),
+                                        onPressed: () {
+                                          showFormDialog(context, index);
+                                        },
+                                      ),
+                                      // Delete Icon
+                                      IconButton(
+                                        icon:
+                                            const Icon(Icons.delete, size: 18),
+                                        onPressed: () {
+                                          showDeleteConfirmationPacientDialog(
+                                              context, index);
+                                        },
+                                      ),
+                                    ],
+                                  ),
                                 ],
                               ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  // Edit Icon
-                                  IconButton(
-                                    icon: const Icon(Icons.edit),
-                                    onPressed: () {
-                                      showFormDialog(context, index);
-                                    },
-                                  ),
-                                  // Delete Icon
-                                  IconButton(
-                                    icon: const Icon(Icons.delete),
-                                    onPressed: () {
-                                      showDeleteConfirmationPacientDialog(
-                                          context, index);
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-              ),
+                            );
+                          }),
+                        )),
             ],
           ),
         ),
@@ -1352,15 +1713,16 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                         )),
             ],
           ),
-         Positioned(
-        bottom: 16,
-        right: 16,
-        child: FloatingActionButton(
-          onPressed: () => showAddItemDialog(context),
-          backgroundColor: Theme.of(context).primaryColor, // Dynamically set color
-          child: const Icon(Icons.add, color: Colors.white),
-        ),
-      ),
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: FloatingActionButton(
+              onPressed: () => showAddItemDialog(context),
+              backgroundColor:
+                  Theme.of(context).primaryColor, // Dynamically set color
+              child: const Icon(Icons.add, color: Colors.white),
+            ),
+          ),
         ],
       ),
     );
