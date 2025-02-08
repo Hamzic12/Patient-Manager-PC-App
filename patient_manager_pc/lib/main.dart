@@ -73,7 +73,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
   String? _loginName;
   String? _loginTime;
 
-  final List<Map<String, String>> _patientsInfo = [];
+  final List<Map<String, dynamic>> _patientsInfo = [];
   final List<Map<String, dynamic>> _inventoryItems = [];
   final List<Map<String, dynamic>> _meetings = [];
   DateTime _selectedDay = DateTime.now();
@@ -82,7 +82,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
   TextEditingController _searchController = TextEditingController();
   String _searchQuery = "";
 
- // Function to filter the list of patients by name
+  // Function to filter the list of patients by name
   void filterPatients(String query) {
     setState(() {
       _searchQuery = query;
@@ -369,36 +369,82 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
 
   Widget _buildPacientiPage() {
     // Filter the patients based on the search query
-    List<Map<String, String>> filteredPatients = _patientsInfo.where((patient) {
-      return patient['name']!.toLowerCase().contains(_searchQuery.toLowerCase());
+    List<Map<String, dynamic>> filteredPatients =
+        _patientsInfo.where((patient) {
+      return patient['name']!
+          .toLowerCase()
+          .contains(_searchQuery.toLowerCase());
     }).toList();
 
-    void showFormDialog(BuildContext context, int index) {
+// Function to edit a patient by their id
+    void editPatientById(
+        int id, String newName, String newEmail, String newPhone) {
+      setState(() {
+        // Find the patient with the given id
+        int index = _patientsInfo.indexWhere((patient) => patient['id'] == id);
+
+        if (index != -1) {
+          // If patient is found, update the patient details
+          _patientsInfo[index] = {
+            'id': id, // Keep the same id
+            'name': newName,
+            'email': newEmail,
+            'phone': newPhone,
+          };
+        } else {
+          // Optionally handle case where the patient was not found
+          print("Pacient s id $id se nenašel.");
+        }
+      });
+    }
+
+    void showFormDialog(BuildContext context, int? id) {
       final nameController = TextEditingController();
       final emailController = TextEditingController();
       final phoneController = TextEditingController();
 
-      if (index != -1) {
-        // Pre-fill the form with the person's data
-        nameController.text = _patientsInfo[index]['name'] ?? '';
-        emailController.text = _patientsInfo[index]['email'] ?? '';
-        phoneController.text = _patientsInfo[index]['phone'] ?? '';
+      // Find the patient by their id
+      if (id != null) {
+        final patient = _patientsInfo.firstWhere(
+          (patient) => patient['id'] == id,
+          orElse: () => {
+            'id': 0,
+            'name': '',
+            'email': '',
+            'phone': ''
+          }, // Return a default empty patient if not found
+        );
+
+        if (patient['id'] != 0) {
+          // Pre-fill the form with the patient's data
+          nameController.text = patient['name'] ?? '';
+          emailController.text = patient['email'] ?? '';
+          phoneController.text = patient['phone'] ?? '';
+        } else {
+          // Handle the case where no patient was found (perhaps show an error)
+          print('Pacient se nenašel.');
+        }
       }
 
-      void savePatient(int index) {
-        final newPatient = {
-          'name': nameController.text.trim(),
-          'email': emailController.text.trim(),
-          'phone': phoneController.text.trim(),
-        };
+      void savePatient(int? id) {
+        final newName = nameController.text.trim();
+        final newEmail = emailController.text.trim();
+        final newPhone = phoneController.text.trim();
 
         setState(() {
-          if (index == -1) {
+          if (id == null) {
             // Add new patient
-            _patientsInfo.add(newPatient);
+            int newId =
+                _patientsInfo.isEmpty ? 1 : _patientsInfo.last['id'] + 1;
+            _patientsInfo.add({
+              'id': newId,
+              'name': newName,
+              'email': newEmail,
+              'phone': newPhone,
+            });
           } else {
-            // Update existing patient
-            _patientsInfo[index] = newPatient;
+            // Update existing patient by id
+            editPatientById(id, newName, newEmail, newPhone);
           }
         });
       }
@@ -407,7 +453,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text(index == -1 ? 'Přidat pacienta' : 'Upravit pacienta'),
+            title: Text(id == null ? 'Přidat pacienta' : 'Upravit pacienta'),
             content: SingleChildScrollView(
               child: Form(
                 key: _formKey, // Add a GlobalKey for validation
@@ -421,7 +467,6 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                         if (value == null || value.trim().isEmpty) {
                           return 'Jméno je povinné.';
                         }
-                        // Split the trimmed value by one or more whitespace characters.
                         List<String> parts = value.trim().split(RegExp(r'\s+'));
                         if (parts.length < 2) {
                           return 'Zadejte prosím celé jméno i příjmení.';
@@ -448,7 +493,6 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                       controller: phoneController,
                       decoration: InputDecoration(
                         labelText: 'Telefonní číslo',
-                        // Display a Czech flag icon and "+420" as prefix before the user's input
                         prefix: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -467,7 +511,6 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                         if (value == null || value.trim().isEmpty) {
                           return 'Telefonní číslo je povinné.';
                         }
-                        // Validate that the input contains exactly 9 digits
                         final phoneRegex = RegExp(r'^\d{9}$');
                         if (!phoneRegex.hasMatch(value.trim())) {
                           return 'Tel. číslo musí obsahovat přesně 9 číslic.';
@@ -489,11 +532,11 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
                     // Proceed only if validation passes
-                    savePatient(index);
+                    savePatient(id);
                     Navigator.pop(context);
                   }
                 },
-                child: Text(index == -1 ? 'Přidat' : 'Upravit'),
+                child: Text(id == null ? 'Přidat' : 'Upravit'),
               ),
             ],
           );
@@ -501,7 +544,13 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
       );
     }
 
-    void showDeleteConfirmationPacientDialog(BuildContext context, int index) {
+    void deletePatient(int id) {
+      setState(() {
+        _patientsInfo.removeWhere((patient) => patient['id'] == id);
+      });
+    }
+
+    void showDeleteConfirmationPacientDialog(BuildContext context, int id) {
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -518,8 +567,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
               TextButton(
                 onPressed: () {
                   setState(() {
-                    _patientsInfo
-                        .removeAt(index); // Remove the person from the list
+                    _patientsInfo.removeWhere((patient) => patient['id'] == id);
                   });
                   Navigator.of(context).pop(); // Close the dialog
                 },
@@ -917,7 +965,9 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                                       IconButton(
                                         icon: const Icon(Icons.edit, size: 18),
                                         onPressed: () {
-                                          showFormDialog(context, index);
+                                          int patientId =
+                                              filteredPatients[index]['id'];
+                                          showFormDialog(context, patientId);
                                         },
                                       ),
                                       // Delete Icon
@@ -925,8 +975,10 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                                         icon:
                                             const Icon(Icons.delete, size: 18),
                                         onPressed: () {
+                                          int patientId =
+                                              filteredPatients[index]['id'];
                                           showDeleteConfirmationPacientDialog(
-                                              context, index);
+                                              context, patientId); // Pass id
                                         },
                                       ),
                                     ],
@@ -969,7 +1021,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
           return StatefulBuilder(
             builder: (context, setDialogState) {
               // Filtrovat pacienty podle dotazu
-              List<Map<String, String>> filteredPatients = _patientsInfo
+              List<Map<String, dynamic>> filteredPatients = _patientsInfo
                   .where((patient) => patient["name"]!
                       .toLowerCase()
                       .contains(searchQuery.toLowerCase()))
@@ -1180,7 +1232,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
           return StatefulBuilder(
             builder: (context, setDialogState) {
               // Filtrovat pacienty podle dotazu
-              List<Map<String, String>> filteredPatients = _patientsInfo
+              List<Map<String, dynamic>> filteredPatients = _patientsInfo
                   .where((patient) => patient["name"]!
                       .toLowerCase()
                       .contains(searchQuery.toLowerCase()))
