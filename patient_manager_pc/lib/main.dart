@@ -79,6 +79,15 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
   DateTime _selectedDay = DateTime.now();
 
   final _formKey = GlobalKey<FormState>();
+  TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
+
+ // Function to filter the list of patients by name
+  void filterPatients(String query) {
+    setState(() {
+      _searchQuery = query;
+    });
+  }
 
   // Method to determine whether the primaryColor is light or dark
   Color getTextColor(BuildContext context) {
@@ -359,6 +368,11 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
   }
 
   Widget _buildPacientiPage() {
+    // Filter the patients based on the search query
+    List<Map<String, String>> filteredPatients = _patientsInfo.where((patient) {
+      return patient['name']!.toLowerCase().contains(_searchQuery.toLowerCase());
+    }).toList();
+
     void showFormDialog(BuildContext context, int index) {
       final nameController = TextEditingController();
       final emailController = TextEditingController();
@@ -584,221 +598,240 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
       return null;
     }
 
-  void showPatientMeetingsDialog(String patientName, Function(int) editMeeting) {
-  List<Map<String, dynamic>> patientMeetings = _meetings
-      .where((meeting) => meeting["name"] == patientName)
-      .toList();
+    void showPatientMeetingsDialog(
+        String patientName, Function(int) editMeeting) {
+      List<Map<String, dynamic>> patientMeetings =
+          _meetings.where((meeting) => meeting["name"] == patientName).toList();
 
-  patientMeetings.sort((a, b) => a["datetime"].compareTo(b["datetime"]));
+      patientMeetings.sort((a, b) => a["datetime"].compareTo(b["datetime"]));
 
-  showDialog(
-    context: context,
-    builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setDialogState) {
-          // Check if the dialog is still mounted before using setDialogState
-          if (!mounted) return Container();
+      showDialog(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              // Check if the dialog is still mounted before using setDialogState
+              if (!mounted) return Container();
 
-          return AlertDialog(
-            title: Text("Schůzky pro $patientName"),
-            content: patientMeetings.isEmpty
-                ? const Text("Pacient nemá žádné naplánované schůzky.")
-                : SizedBox(
-                    width: double.maxFinite,
-                    child: Wrap(
-                      spacing: 8.0,
-                      runSpacing: 8.0,
-                      children: patientMeetings.map((meeting) {
-                        DateTime startDateTime = meeting["datetime"];
-                        DateTime endDateTime = startDateTime.add(const Duration(minutes: 30));
+              return AlertDialog(
+                title: Text("Schůzky pro $patientName"),
+                content: patientMeetings.isEmpty
+                    ? const Text("Pacient nemá žádné naplánované schůzky.")
+                    : SizedBox(
+                        width: double.maxFinite,
+                        child: Wrap(
+                          spacing: 8.0,
+                          runSpacing: 8.0,
+                          children: patientMeetings.map((meeting) {
+                            DateTime startDateTime = meeting["datetime"];
+                            DateTime endDateTime =
+                                startDateTime.add(const Duration(minutes: 30));
 
-                        String formattedStartDate =
-                            DateFormat("dd-MM-yyyy HH:mm").format(startDateTime);
-                        String formattedEndDate =
-                            DateFormat("dd-MM-yyyy HH:mm").format(endDateTime);
+                            String formattedStartDate =
+                                DateFormat("dd-MM-yyyy HH:mm")
+                                    .format(startDateTime);
+                            String formattedEndDate =
+                                DateFormat("dd-MM-yyyy HH:mm")
+                                    .format(endDateTime);
 
-                        return Card(
-                          color: Colors.blue[100],
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  '$formattedStartDate - $formattedEndDate',
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
+                            return Card(
+                              color: Colors.blue[100],
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    // Edit button
-                                    IconButton(
-                                      icon: const Icon(Icons.edit, size: 18),
-                                      onPressed: () async {
-                                        int originalIndex = _meetings.indexWhere(
-                                          (m) =>
-                                              m["datetime"] == meeting["datetime"] &&
-                                              m["name"] == meeting["name"],
-                                        );
-                                        if (originalIndex != -1) {
-                                         
-
-                                          await editMeeting(originalIndex);  // Edit meeting
-
-                                          // Only update the dialog if it's still mounted
-                                          if (mounted) {
-                                            setDialogState(() {
-                                              patientMeetings = _meetings
-                                                  .where((m) => m["name"] == patientName)
-                                                  .toList();
-                                              patientMeetings.sort(
-                                                  (a, b) => a["datetime"].compareTo(b["datetime"]));
-                                            });
-                                          }
-                                        }
-                                      },
+                                    Text(
+                                      '$formattedStartDate - $formattedEndDate',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold),
                                     ),
-                                    // Delete button
-                                    IconButton(
-                                      icon: const Icon(Icons.delete, size: 18),
-                                      onPressed: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) {
-                                            return AlertDialog(
-                                              title: const Text("Odstranit schůzku"),
-                                              content: const Text(
-                                                  "Opravdu chcete odstranit schůzku?"),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.of(context).pop(),
-                                                  child: const Text("Ne"),
-                                                ),
-                                                TextButton(
-                                                  onPressed: () {
-                                                    int originalIndex =
-                                                        _meetings.indexWhere(
-                                                      (m) =>
-                                                          m["datetime"] ==
-                                                              meeting["datetime"] &&
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        // Edit button
+                                        IconButton(
+                                          icon:
+                                              const Icon(Icons.edit, size: 18),
+                                          onPressed: () async {
+                                            int originalIndex =
+                                                _meetings.indexWhere(
+                                              (m) =>
+                                                  m["datetime"] ==
+                                                      meeting["datetime"] &&
+                                                  m["name"] == meeting["name"],
+                                            );
+                                            if (originalIndex != -1) {
+                                              await editMeeting(
+                                                  originalIndex); // Edit meeting
+
+                                              // Only update the dialog if it's still mounted
+                                              if (mounted) {
+                                                setDialogState(() {
+                                                  patientMeetings = _meetings
+                                                      .where((m) =>
                                                           m["name"] ==
-                                                              meeting["name"],
-                                                    );
-                                                    if (originalIndex != -1) {
-                                                      setState(() {
-                                                        _meetings.removeAt(originalIndex);
-                                                      });
-                                                      setDialogState(() {
-                                                        patientMeetings = _meetings
-                                                            .where((m) =>
-                                                                m["name"] ==
-                                                                patientName)
-                                                            .toList();
-                                                        patientMeetings.sort(
-                                                            (a, b) =>
+                                                          patientName)
+                                                      .toList();
+                                                  patientMeetings.sort((a, b) =>
+                                                      a["datetime"].compareTo(
+                                                          b["datetime"]));
+                                                });
+                                              }
+                                            }
+                                          },
+                                        ),
+                                        // Delete button
+                                        IconButton(
+                                          icon: const Icon(Icons.delete,
+                                              size: 18),
+                                          onPressed: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (context) {
+                                                return AlertDialog(
+                                                  title: const Text(
+                                                      "Odstranit schůzku"),
+                                                  content: const Text(
+                                                      "Opravdu chcete odstranit schůzku?"),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.of(context)
+                                                              .pop(),
+                                                      child: const Text("Ne"),
+                                                    ),
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        int originalIndex =
+                                                            _meetings
+                                                                .indexWhere(
+                                                          (m) =>
+                                                              m["datetime"] ==
+                                                                  meeting[
+                                                                      "datetime"] &&
+                                                              m["name"] ==
+                                                                  meeting[
+                                                                      "name"],
+                                                        );
+                                                        if (originalIndex !=
+                                                            -1) {
+                                                          setState(() {
+                                                            _meetings.removeAt(
+                                                                originalIndex);
+                                                          });
+                                                          setDialogState(() {
+                                                            patientMeetings = _meetings
+                                                                .where((m) =>
+                                                                    m["name"] ==
+                                                                    patientName)
+                                                                .toList();
+                                                            patientMeetings.sort((a,
+                                                                    b) =>
                                                                 a["datetime"]
-                                                                    .compareTo(
-                                                                        b["datetime"]));
-                                                      });
-                                                    }
-                                                    Navigator.of(context).pop();
-                                                  },
-                                                  child: const Text("Ano"),
-                                                ),
-                                              ],
+                                                                    .compareTo(b[
+                                                                        "datetime"]));
+                                                          });
+                                                        }
+                                                        Navigator.of(context)
+                                                            .pop();
+                                                      },
+                                                      child: const Text("Ano"),
+                                                    ),
+                                                  ],
+                                                );
+                                              },
                                             );
                                           },
-                                        );
-                                      },
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("Zavřít"),
                   ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Zavřít"),
-              ),
-            ],
+                ],
+              );
+            },
           );
         },
       );
-    },
-  );
-}
+    }
 
-Future<void> editMeeting(int index) async {
-  Map<String, dynamic> meeting = _meetings[index];
-  DateTime selectedDateTime = meeting["datetime"];
+    Future<void> editMeeting(int index) async {
+      Map<String, dynamic> meeting = _meetings[index];
+      DateTime selectedDateTime = meeting["datetime"];
 
-  await showDialog(
-    context: context,
-    builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            title: const Text("Upravit čas schůzky"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ElevatedButton(
-                  onPressed: () async {
-                    DateTime? newDateTime =
-                        await selectDateTimeWithSlots(selectedDateTime);
-                    if (newDateTime != null) {
-                      setDialogState(() {
-                        selectedDateTime = newDateTime;
-                      });
-                    }
-                  },
-                  child: Text(
-                      "Změnit čas: ${DateFormat("dd-MM-yyyy HH:mm").format(selectedDateTime)}"),
+      await showDialog(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              return AlertDialog(
+                title: const Text("Upravit čas schůzky"),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () async {
+                        DateTime? newDateTime =
+                            await selectDateTimeWithSlots(selectedDateTime);
+                        if (newDateTime != null) {
+                          setDialogState(() {
+                            selectedDateTime = newDateTime;
+                          });
+                        }
+                      },
+                      child: Text(
+                          "Změnit čas: ${DateFormat("dd-MM-yyyy HH:mm").format(selectedDateTime)}"),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Zrušit"),
-              ),
-              TextButton(
-                onPressed: () {
-                  bool isTimeTaken = _meetings.any((m) =>
-                      isSameDay(m["datetime"], selectedDateTime) &&
-                      m["datetime"].hour == selectedDateTime.hour &&
-                      m["datetime"].minute == selectedDateTime.minute &&
-                      m != meeting);
-                  if (isTimeTaken) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text("Tento termín je již obsazen!")));
-                    return;
-                  }
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("Zrušit"),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      bool isTimeTaken = _meetings.any((m) =>
+                          isSameDay(m["datetime"], selectedDateTime) &&
+                          m["datetime"].hour == selectedDateTime.hour &&
+                          m["datetime"].minute == selectedDateTime.minute &&
+                          m != meeting);
+                      if (isTimeTaken) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text("Tento termín je již obsazen!")));
+                        return;
+                      }
 
-                  // Save changes
-                  setState(() {
-                    _meetings[index]["datetime"] = selectedDateTime;
-                  });
+                      // Save changes
+                      setState(() {
+                        _meetings[index]["datetime"] = selectedDateTime;
+                      });
 
-                  // Close the dialog
-                  Navigator.pop(context);
-                },
-                child: const Text("Uložit"),
-              ),
-            ],
+                      // Close the dialog
+                      Navigator.pop(context);
+                    },
+                    child: const Text("Uložit"),
+                  ),
+                ],
+              );
+            },
           );
         },
       );
-    },
-  );
-}
+    }
 
     return Stack(
       children: [
@@ -816,12 +849,26 @@ Future<void> editMeeting(int index) async {
               ),
               const SizedBox(height: 16), // Space between title and content
 
+              // Search Bar
+              TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  labelText: 'Hledej pacienta podle jména...',
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (value) {
+                  filterPatients(value);
+                },
+              ),
+              const SizedBox(
+                  height: 16), // Space between search bar and content
+
               // Expanded area for the patient list or empty state message
               Expanded(
-                  child: _patientsInfo.isEmpty
+                  child: filteredPatients.isEmpty
                       ? const Center(
                           child: Text(
-                            'Nemáme žádného objednaného pacienta.',
+                            'Nemáme žádného pacienta.',
                             style: TextStyle(fontSize: 18, color: Colors.grey),
                             textAlign: TextAlign.center,
                           ),
@@ -830,7 +877,7 @@ Future<void> editMeeting(int index) async {
                           spacing: 10.0, // Horizontal space between cards
                           runSpacing: 10.0, // Vertical space between rows
                           children:
-                              List.generate(_patientsInfo.length, (index) {
+                              List.generate(filteredPatients.length, (index) {
                             return Container(
                               width: 350, // Smaller card width
                               padding: const EdgeInsets.all(8),
@@ -842,15 +889,16 @@ Future<void> editMeeting(int index) async {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    _patientsInfo[index]['name'] ?? 'Neuvedeno',
+                                    filteredPatients[index]['name'] ??
+                                        'Neuvedeno',
                                     style: const TextStyle(
                                         fontWeight: FontWeight.bold),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                      'Email: ${_patientsInfo[index]['email'] ?? 'Neuvedeno'}'),
+                                      'Email: ${filteredPatients[index]['email'] ?? 'Neuvedeno'}'),
                                   Text(
-                                      'Telefon: ${_patientsInfo[index]['phone'] ?? 'Neuvedeno'}'),
+                                      'Telefon: ${filteredPatients[index]['phone'] ?? 'Neuvedeno'}'),
                                   const SizedBox(height: 8),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.end,
@@ -860,7 +908,7 @@ Future<void> editMeeting(int index) async {
                                         icon: const Icon(Icons.event_note),
                                         onPressed: () =>
                                             showPatientMeetingsDialog(
-                                                _patientsInfo[index]['name']
+                                                filteredPatients[index]['name']
                                                     .toString(),
                                                 editMeeting),
                                       ),
@@ -912,7 +960,7 @@ Future<void> editMeeting(int index) async {
     }
 
     Future<String?> selectPatient() async {
-      TextEditingController searchController = TextEditingController();
+      TextEditingController _searchController = TextEditingController();
       String searchQuery = "";
 
       return await showDialog<String>(
@@ -934,7 +982,7 @@ Future<void> editMeeting(int index) async {
                   children: [
                     // Vyhledávací pole
                     TextField(
-                      controller: searchController,
+                      controller: _searchController,
                       decoration: const InputDecoration(
                         hintText: "Hledat pacienta...",
                         prefixIcon: Icon(Icons.search),
@@ -1123,7 +1171,7 @@ Future<void> editMeeting(int index) async {
       String? selectedPatient = meeting["name"];
       DateTime selectedDateTime = meeting["datetime"];
 
-      TextEditingController searchController = TextEditingController();
+      TextEditingController _searchController = TextEditingController();
       String searchQuery = "";
 
       await showDialog(
@@ -1145,7 +1193,7 @@ Future<void> editMeeting(int index) async {
                   children: [
                     // Vyhledávací pole
                     TextField(
-                      controller: searchController,
+                      controller: _searchController,
                       decoration: const InputDecoration(
                         hintText: "Hledat pacienta...",
                         prefixIcon: Icon(Icons.search),
