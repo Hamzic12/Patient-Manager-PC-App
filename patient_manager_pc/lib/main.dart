@@ -426,7 +426,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
         }
       }
 
-      void savePatient(int? id) {
+      void savePatient() {
         final newName = nameController.text.trim();
         final newEmail = emailController.text.trim();
         final newPhone = phoneController.text.trim();
@@ -532,7 +532,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
                     // Proceed only if validation passes
-                    savePatient(id);
+                    savePatient();
                     Navigator.pop(context);
                   }
                 },
@@ -995,7 +995,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
           bottom: 16,
           right: 16,
           child: FloatingActionButton(
-            onPressed: () => showFormDialog(context, -1), // Open form dialog
+            onPressed: () => showFormDialog(context, null), // Open form dialog
             backgroundColor:
                 Theme.of(context).primaryColor, // Use theme's primary color
             child: const Icon(Icons.add, color: Colors.white),
