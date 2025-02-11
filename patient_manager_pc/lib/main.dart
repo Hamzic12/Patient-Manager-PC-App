@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Pacienty Management PC',
+      title: 'UroTep',
       theme: ThemeData(
         primaryColor: const Color(0xFF45AC8B), // Set custom primary color
         primarySwatch: createMaterialColor(
@@ -133,9 +133,9 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
             ),
             TextButton(
               onPressed: () {
-                if (username.isNotEmpty && password.isNotEmpty) {
+                if (username == "admin" && password == "1234") {
                   // Format the current date/time in dd-MM-yy hh:mm format
-                  String formattedLoginTime = DateFormat('dd-MM-yyyy HH:mm')
+                  String formattedLoginTime = DateFormat('dd.MM.yyyy HH:mm')
                       .format(DateTime.now().toLocal());
                   setState(() {
                     _loginName = username;
@@ -177,6 +177,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                 setState(() {
                   _loginName = null;
                   _loginTime = null;
+                  _selectedPage = "Domů";
                 });
                 Navigator.of(context).pop(); // Close the dialog
               },
@@ -233,27 +234,39 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                   leading: const Icon(Icons.people),
                   title: const Text('Pacienti'),
                   onTap: () {
+                    if(_loginName != null){
                     setState(() {
                       _selectedPage = 'Pacienti';
                     });
+                    }else{
+                      _showLoginDialog();
+                    }
                   },
                 ),
                 ListTile(
                   leading: const Icon(Icons.schedule),
                   title: const Text('Schůzky'),
                   onTap: () {
+                    if(_loginName != null){
                     setState(() {
                       _selectedPage = 'Schůzky';
                     });
+                    }else{
+                      _showLoginDialog();
+                    }
                   },
                 ),
                 ListTile(
                   leading: const Icon(Icons.inventory),
                   title: const Text('Inventář'),
                   onTap: () {
+                    if(_loginName != null){
                     setState(() {
                       _selectedPage = 'Inventář';
                     });
+                    }else{
+                      _showLoginDialog();
+                    }
                   },
                 ),
               ],
@@ -302,7 +315,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
           const SizedBox(height: 16),
           const Text(
             'Tato aplikace je určena pro personál urologické ordinace. '
-            'Správa pacientů, plánování schůzek a správa o inventáři - vše na jednom místě.',
+            'Správa pacientů, plánování schůzek a správa inventáře - vše na jednom místě.',
             style: TextStyle(fontSize: 18),
             textAlign: TextAlign.center,
           ),
