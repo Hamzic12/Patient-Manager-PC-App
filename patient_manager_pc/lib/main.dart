@@ -79,7 +79,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
   DateTime _selectedDay = DateTime.now();
 
   final _formKey = GlobalKey<FormState>();
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   String _searchQuery = "";
 
   // Function to filter the list of patients by name
@@ -564,6 +564,10 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
     }
 
     void showDeleteConfirmationPacientDialog(BuildContext context, int id) {
+      Map<String, dynamic> patient = _patientsInfo.firstWhere(
+      (p) => p['id'] == id,
+    );
+
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -581,6 +585,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                 onPressed: () {
                   setState(() {
                     _patientsInfo.removeWhere((patient) => patient['id'] == id);
+                    _meetings.removeWhere((meetings) => meetings["name"] == patient["name"]);
                   });
                   Navigator.of(context).pop(); // Close the dialog
                 },
@@ -913,7 +918,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
               // Search Bar
               TextField(
                 controller: _searchController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Hledej pacienta podle jména...',
                   border: OutlineInputBorder(),
                 ),
@@ -1025,7 +1030,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
     }
 
     Future<String?> selectPatient() async {
-      TextEditingController _searchController = TextEditingController();
+      TextEditingController searchController = TextEditingController();
       String searchQuery = "";
 
       return await showDialog<String>(
@@ -1047,7 +1052,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                   children: [
                     // Vyhledávací pole
                     TextField(
-                      controller: _searchController,
+                      controller: searchController,
                       decoration: const InputDecoration(
                         hintText: "Hledat pacienta...",
                         prefixIcon: Icon(Icons.search),
@@ -1236,7 +1241,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
       String? selectedPatient = meeting["name"];
       DateTime selectedDateTime = meeting["datetime"];
 
-      TextEditingController _searchController = TextEditingController();
+      TextEditingController searchController = TextEditingController();
       String searchQuery = "";
 
       await showDialog(
@@ -1258,7 +1263,7 @@ class _PacientManagementPCState extends State<PacientManagementPC> {
                   children: [
                     // Vyhledávací pole
                     TextField(
-                      controller: _searchController,
+                      controller: searchController,
                       decoration: const InputDecoration(
                         hintText: "Hledat pacienta...",
                         prefixIcon: Icon(Icons.search),
